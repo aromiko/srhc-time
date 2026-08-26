@@ -41,6 +41,12 @@ export default async function AdminLayout({
             >
               Employees
             </Link>
+            <Link
+              href="/admin/calendar"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              Calendar
+            </Link>
             <LogoutButton />
           </nav>
         </div>

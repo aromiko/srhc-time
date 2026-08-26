@@ -14,7 +14,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-1 flex-col">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <div>
             <Link href="/dashboard" className="text-lg font-semibold text-slate-900">
               SRHC Time
@@ -34,11 +34,17 @@ export default async function DashboardLayout({
             >
               File Leave
             </Link>
+            <Link
+              href="/dashboard/calendar"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              Calendar
+            </Link>
             <LogoutButton />
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
     </div>
   );
 }
