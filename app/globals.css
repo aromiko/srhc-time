@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -10,17 +11,33 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Brand palette, approximated from the Barangay Santa Rita seal. */
+  --color-brand-50: #effbf1;
+  --color-brand-100: #d8f3dd;
+  --color-brand-200: #b0e6bb;
+  --color-brand-300: #7fd190;
+  --color-brand-400: #4fb868;
+  --color-brand-500: #2f9c4c;
+  --color-brand-600: #227d3c;
+  --color-brand-700: #1b6430;
+  --color-brand-800: #164f27;
+  --color-brand-900: #123f20;
+
+  --color-gold-50: #fdf8e9;
+  --color-gold-100: #faedc2;
+  --color-gold-200: #f3da8a;
+  --color-gold-400: #e0ac2b;
+  --color-gold-600: #a3730f;
+  --color-gold-800: #5c3f09;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Single light theme for now - deliberately not following OS dark mode,
+   since most of the UI uses hardcoded light-surface classes and a partial
+   dark mode reads as broken rather than themed. */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }
