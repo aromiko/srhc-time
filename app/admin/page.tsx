@@ -20,13 +20,17 @@ export default async function AdminHomePage({
   const { error } = await searchParams;
   const supabase = await createClient();
 
-  const { data: requests } = await supabase
+  const { data: requests, error: requestsError } = await supabase
     .from("leave_requests")
     .select(
-      "id, start_date, end_date, days_requested, reason, profile:profiles(full_name), leave_type:leave_types(name)",
+      "id, start_date, end_date, days_requested, reason, profile:profiles!leave_requests_user_id_fkey(full_name), leave_type:leave_types(name)",
     )
     .eq("status", "pending")
     .order("created_at", { ascending: true });
+
+  if (requestsError) {
+    console.error("Failed to load pending leave requests:", requestsError);
+  }
 
   const pending = (requests ?? []) as unknown as PendingRequest[];
 
