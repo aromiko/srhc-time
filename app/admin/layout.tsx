@@ -30,6 +30,12 @@ export default async function AdminLayout({
               Requests
             </Link>
             <Link
+              href="/admin/requests"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              History
+            </Link>
+            <Link
               href="/admin/employees"
               className="text-sm font-medium text-slate-600 hover:text-slate-900"
             >

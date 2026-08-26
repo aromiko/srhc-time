@@ -1,0 +1,60 @@
+name: Bump Version
+
+# Runs after a PR is merged into develop.
+# Bumps the patch version in package.json, then opens a PR
+# with the change instead of pushing directly — so it still
+# goes through your branch protection rules.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [develop]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-version:
+    # Only run if the PR was actually merged (not just closed),
+    # and skip if this PR was itself a version-bump PR to avoid loops.
+    if: >
+      github.event.pull_request.merged == true &&
+      !startsWith(github.event.pull_request.head.ref, 'chore/bump-version')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Bumps package.json + package-lock.json, no git commit/tag
+      # (npm version normally commits/tags — we skip that since
+      # create-pull-request handles the commit for us).
+      - name: Bump patch version
+        run: npm version patch --no-git-tag-version
+
+      - name: Read new version
+        id: version
+        run: echo "value=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Open version bump PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/bump-version-${{ steps.version.outputs.value }}
+          base: develop
+          title: "chore: bump version to ${{ steps.version.outputs.value }}"
+          commit-message: "chore: bump version to ${{ steps.version.outputs.value }}"
+          body: |
+            Automated version bump triggered by merge of #${{ github.event.pull_request.number }} into `develop`.
+
+            `0.1.0` → `${{ steps.version.outputs.value }}`
+          labels: version-bump
