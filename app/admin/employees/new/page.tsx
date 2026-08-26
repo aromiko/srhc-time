@@ -30,7 +30,7 @@ export default async function NewEmployeePage({
             name="full_name"
             type="text"
             required
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           />
         </div>
 
@@ -43,7 +43,7 @@ export default async function NewEmployeePage({
             name="email"
             type="email"
             required
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           />
         </div>
 
@@ -57,7 +57,7 @@ export default async function NewEmployeePage({
             type="text"
             required
             minLength={8}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           />
           <p className="mt-1 text-xs text-slate-400">
             At least 8 characters. Share this with the employee directly.
@@ -72,7 +72,7 @@ export default async function NewEmployeePage({
             id="role"
             name="role"
             defaultValue="employee"
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           >
             <option value="employee">Employee</option>
             <option value="admin">Admin</option>
@@ -81,7 +81,7 @@ export default async function NewEmployeePage({
 
         <button
           type="submit"
-          className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="w-full rounded-md bg-brand-700 px-4 py-3 text-base font-medium text-white hover:bg-brand-800"
         >
           Create Employee
         </button>

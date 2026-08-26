@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SRHC Time",
-  description: "Santa Rita Health Center - staff leave tracking",
+  description: "Barangay Santa Rita Health Center - staff leave tracking",
+  icons: {
+    icon: "/branding/logo.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
