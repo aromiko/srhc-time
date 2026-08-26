@@ -5,6 +5,18 @@ import type { Profile } from "@/lib/types";
 
 const columns: Column<Profile>[] = [
   { key: "name", header: "Name", cell: (e) => e.full_name },
+  {
+    key: "mobile",
+    header: "Mobile",
+    cell: (e) =>
+      e.mobile_number ? (
+        <a href={`tel:${e.mobile_number}`} className="text-brand-700 hover:text-brand-800">
+          {e.mobile_number}
+        </a>
+      ) : (
+        <span className="text-slate-400">—</span>
+      ),
+  },
   { key: "role", header: "Role", cell: (e) => <span className="capitalize">{e.role}</span> },
   {
     key: "manage",

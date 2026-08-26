@@ -64,6 +64,32 @@ export default async function NewEmployeePage({
           </p>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="mobile_number" className="block text-sm font-medium text-slate-700">
+              Mobile Number
+            </label>
+            <input
+              id="mobile_number"
+              name="mobile_number"
+              type="tel"
+              placeholder="09XX XXX XXXX"
+              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+            />
+          </div>
+          <div>
+            <label htmlFor="birthday" className="block text-sm font-medium text-slate-700">
+              Birthday
+            </label>
+            <input
+              id="birthday"
+              name="birthday"
+              type="date"
+              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+            />
+          </div>
+        </div>
+
         <div>
           <label htmlFor="role" className="block text-sm font-medium text-slate-700">
             Role
