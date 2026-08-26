@@ -1,14 +1,25 @@
 name: Bump Version
 
-# Runs after a PR is merged into develop.
-# Bumps the patch version in package.json, then opens a PR
-# with the change instead of pushing directly — so it still
-# goes through your branch protection rules.
+# Manually triggered from the Actions tab (Run workflow button).
+# You pick a target branch and type in the new version number.
+# It checks out that branch, sets the version in package.json,
+# and opens a PR back into that branch — no local edits needed.
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch to bump"
+        required: true
+        type: choice
+        options:
+          - develop
+          - main
+        default: develop
+      version:
+        description: "New version number (e.g. 0.2.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -16,18 +27,19 @@ permissions:
 
 jobs:
   bump-version:
-    # Only run if the PR was actually merged (not just closed),
-    # and skip if this PR was itself a version-bump PR to avoid loops.
-    if: >
-      github.event.pull_request.merged == true &&
-      !startsWith(github.event.pull_request.head.ref, 'chore/bump-version')
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout develop
+      - name: Validate version format
+        run: |
+          if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'${{ inputs.version }}' isn't a valid semver version (expected e.g. 0.2.0 or 1.0.0-beta.1)"
+            exit 1
+          fi
+
+      - name: Checkout target branch
         uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: ${{ inputs.target_branch }}
           fetch-depth: 0
 
       - name: Set up Node
@@ -35,26 +47,22 @@ jobs:
         with:
           node-version: 20
 
-      # Bumps package.json + package-lock.json, no git commit/tag
-      # (npm version normally commits/tags — we skip that since
-      # create-pull-request handles the commit for us).
-      - name: Bump patch version
-        run: npm version patch --no-git-tag-version
-
-      - name: Read new version
-        id: version
-        run: echo "value=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      # Sets package.json + package-lock.json to the exact version typed in,
+      # rather than incrementing patch/minor/major.
+      - name: Set version
+        run: npm version ${{ inputs.version }} --no-git-tag-version --allow-same-version
 
       - name: Open version bump PR
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: chore/bump-version-${{ steps.version.outputs.value }}
-          base: develop
-          title: "chore: bump version to ${{ steps.version.outputs.value }}"
-          commit-message: "chore: bump version to ${{ steps.version.outputs.value }}"
+          branch: chore/bump-version-${{ inputs.version }}
+          base: ${{ inputs.target_branch }}
+          title: "chore: bump version to ${{ inputs.version }}"
+          commit-message: "chore: bump version to ${{ inputs.version }}"
           body: |
-            Automated version bump triggered by merge of #${{ github.event.pull_request.number }} into `develop`.
+            Manual version bump requested by @${{ github.actor }} via workflow_dispatch.
 
-            `0.1.0` → `${{ steps.version.outputs.value }}`
+            Target branch: `${{ inputs.target_branch }}`
+            New version: `${{ inputs.version }}`
           labels: version-bump
