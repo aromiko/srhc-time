@@ -4,6 +4,38 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 
+export async function updateProfile(formData: FormData) {
+  const { supabase } = await requireAdmin();
+
+  const userId = String(formData.get("user_id") ?? "");
+  const fullName = String(formData.get("full_name") ?? "").trim();
+  const mobileNumber = String(formData.get("mobile_number") ?? "").trim();
+  const birthday = String(formData.get("birthday") ?? "").trim();
+
+  if (!userId || !fullName) {
+    redirect(
+      `/admin/employees/${userId}?error=` + encodeURIComponent("Full name is required."),
+    );
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      full_name: fullName,
+      mobile_number: mobileNumber || null,
+      birthday: birthday || null,
+    })
+    .eq("id", userId);
+
+  if (error) {
+    redirect(`/admin/employees/${userId}?error=` + encodeURIComponent(error.message));
+  }
+
+  revalidatePath(`/admin/employees/${userId}`);
+  revalidatePath("/admin/employees");
+  redirect(`/admin/employees/${userId}`);
+}
+
 export async function updateLeaveBalance(formData: FormData) {
   const { supabase } = await requireAdmin();
 

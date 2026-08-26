@@ -1,6 +1,37 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ResponsiveTable, type Column } from "@/components/responsive-table";
 import type { Profile } from "@/lib/types";
+
+const columns: Column<Profile>[] = [
+  { key: "name", header: "Name", cell: (e) => e.full_name },
+  {
+    key: "mobile",
+    header: "Mobile",
+    cell: (e) =>
+      e.mobile_number ? (
+        <a href={`tel:${e.mobile_number}`} className="text-brand-700 hover:text-brand-800">
+          {e.mobile_number}
+        </a>
+      ) : (
+        <span className="text-slate-400">—</span>
+      ),
+  },
+  { key: "role", header: "Role", cell: (e) => <span className="capitalize">{e.role}</span> },
+  {
+    key: "manage",
+    header: "",
+    align: "right",
+    cell: (e) => (
+      <Link
+        href={`/admin/employees/${e.id}`}
+        className="text-sm font-medium text-brand-700 hover:text-brand-800"
+      >
+        Manage
+      </Link>
+    ),
+  },
+];
 
 export default async function EmployeesPage() {
   const supabase = await createClient();
@@ -17,45 +48,19 @@ export default async function EmployeesPage() {
         <h1 className="text-lg font-semibold text-slate-900">Employees</h1>
         <Link
           href="/admin/employees/new"
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
         >
           + New Employee
         </Link>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="px-4 py-2 text-left font-medium text-slate-500">Name</th>
-              <th className="px-4 py-2 text-left font-medium text-slate-500">Role</th>
-              <th className="px-4 py-2 text-right font-medium text-slate-500"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {employees.length === 0 && (
-              <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-slate-400">
-                  No employees yet.
-                </td>
-              </tr>
-            )}
-            {employees.map((e) => (
-              <tr key={e.id}>
-                <td className="px-4 py-2 text-slate-800">{e.full_name}</td>
-                <td className="px-4 py-2 capitalize text-slate-600">{e.role}</td>
-                <td className="px-4 py-2 text-right">
-                  <Link
-                    href={`/admin/employees/${e.id}`}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                  >
-                    Manage
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-4">
+        <ResponsiveTable
+          columns={columns}
+          rows={employees}
+          rowKey={(e) => e.id}
+          emptyMessage="No employees yet."
+        />
       </div>
     </div>
   );
