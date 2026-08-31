@@ -7,12 +7,14 @@ export type Profile = {
   role: Role;
   mobile_number: string | null;
   birthday: string | null;
+  skip_next_accrual: boolean;
   created_at: string;
 };
 
 export type LeaveType = {
   id: string;
   name: string;
+  is_active: boolean;
 };
 
 export type LeaveBalance = {
