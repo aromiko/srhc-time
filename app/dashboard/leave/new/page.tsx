@@ -16,6 +16,7 @@ export default async function NewLeaveRequestPage({
   const { data: leaveTypes } = await supabase
     .from("leave_types")
     .select("id, name")
+    .eq("is_active", true)
     .order("name");
 
   return (

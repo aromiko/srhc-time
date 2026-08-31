@@ -49,7 +49,7 @@ export default async function EmployeeDetailPage({
   if (!profile) notFound();
 
   const [{ data: leaveTypes }, { data: balances }, { data: requests }] = await Promise.all([
-    supabase.from("leave_types").select("id, name").order("name"),
+    supabase.from("leave_types").select("id, name").eq("is_active", true).order("name"),
     supabase
       .from("leave_balances")
       .select("leave_type_id, allocated_days, used_days, leave_type:leave_types(name)")
