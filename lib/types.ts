@@ -39,3 +39,22 @@ export type LeaveRequest = {
   admin_notes: string | null;
   created_at: string;
 };
+
+export type ShiftColor = "blue" | "purple" | "fuchsia" | "green" | "orange";
+
+export type ShiftType = {
+  id: string;
+  name: string;
+  color: ShiftColor;
+  is_active: boolean;
+};
+
+export type Schedule = {
+  id: string;
+  user_id: string;
+  shift_type_id: string;
+  date: string;
+  notes: string | null;
+  assigned_by: string | null;
+  created_at: string;
+};
