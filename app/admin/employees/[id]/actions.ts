@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
+import { withSuccess, withError } from "@/lib/flash";
 
 export async function updateProfile(formData: FormData) {
   const { supabase } = await requireAdmin();
@@ -13,9 +14,7 @@ export async function updateProfile(formData: FormData) {
   const birthday = String(formData.get("birthday") ?? "").trim();
 
   if (!userId || !fullName) {
-    redirect(
-      `/admin/employees/${userId}?error=` + encodeURIComponent("Full name is required."),
-    );
+    redirect(withError(`/admin/employees/${userId}`, "Full name is required."));
   }
 
   const { error } = await supabase
@@ -28,12 +27,12 @@ export async function updateProfile(formData: FormData) {
     .eq("id", userId);
 
   if (error) {
-    redirect(`/admin/employees/${userId}?error=` + encodeURIComponent(error.message));
+    redirect(withError(`/admin/employees/${userId}`, error.message));
   }
 
   revalidatePath(`/admin/employees/${userId}`);
   revalidatePath("/admin/employees");
-  redirect(`/admin/employees/${userId}`);
+  redirect(withSuccess(`/admin/employees/${userId}`, "Profile updated."));
 }
 
 export async function updateLeaveBalance(formData: FormData) {
@@ -44,7 +43,7 @@ export async function updateLeaveBalance(formData: FormData) {
   const allocatedDays = Number(formData.get("allocated_days") ?? "0");
 
   if (!userId || !leaveTypeId || Number.isNaN(allocatedDays) || allocatedDays < 0) {
-    redirect(`/admin/employees/${userId}?error=` + encodeURIComponent("Invalid value."));
+    redirect(withError(`/admin/employees/${userId}`, "Invalid value."));
   }
 
   const { data: existing } = await supabase
@@ -69,5 +68,5 @@ export async function updateLeaveBalance(formData: FormData) {
   }
 
   revalidatePath(`/admin/employees/${userId}`);
-  redirect(`/admin/employees/${userId}`);
+  redirect(withSuccess(`/admin/employees/${userId}`, "Balance updated."));
 }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { applyLeaveStatusChange } from "@/lib/leave-requests";
+import { withSuccess, withError } from "@/lib/flash";
 import type { LeaveStatus } from "@/lib/types";
 
 const VALID_STATUSES: LeaveStatus[] = ["pending", "approved", "declined"];
@@ -15,7 +16,7 @@ export async function updateRequestStatus(formData: FormData) {
   const adminNotes = String(formData.get("admin_notes") ?? "").trim() || null;
 
   if (!VALID_STATUSES.includes(status)) {
-    redirect("/admin/requests?error=" + encodeURIComponent("Invalid status."));
+    redirect(withError("/admin/requests", "Invalid status."));
   }
 
   const { error } = await applyLeaveStatusChange(
@@ -25,9 +26,9 @@ export async function updateRequestStatus(formData: FormData) {
     adminId,
     adminNotes,
   );
-  if (error) redirect("/admin/requests?error=" + encodeURIComponent(error));
+  if (error) redirect(withError("/admin/requests", error));
 
   revalidatePath("/admin");
   revalidatePath("/admin/requests");
-  redirect("/admin/requests");
+  redirect(withSuccess("/admin/requests", "Status updated."));
 }

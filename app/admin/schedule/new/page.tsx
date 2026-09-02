@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { SubmitButton } from "@/components/submit-button";
 import { assignSchedule } from "./actions";
 
 export default async function NewSchedulePage({
@@ -106,12 +107,12 @@ export default async function NewSchedulePage({
           already has a shift on overwrites it.
         </p>
 
-        <button
-          type="submit"
-          className="w-full rounded-md bg-brand-700 px-4 py-3 text-base font-medium text-white hover:bg-brand-800"
+        <SubmitButton
+          pendingText="Assigning…"
+          className="w-full justify-center rounded-md bg-brand-700 px-4 py-3 text-base font-medium text-white hover:bg-brand-800"
         >
           Assign Schedule
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

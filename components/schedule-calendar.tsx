@@ -1,4 +1,5 @@
-import { MonthCalendar, type MonthCalendarEvent } from "@/components/month-calendar";
+import { WeekCalendar } from "@/components/week-calendar";
+import type { MonthCalendarEvent } from "@/components/month-calendar";
 import { SHIFT_PILL_CLASSES, SHIFT_DOT_CLASSES } from "@/lib/shift-colors";
 import type { ShiftColor } from "@/lib/types";
 
@@ -10,21 +11,19 @@ export type ScheduleEvent = {
 };
 
 export function ScheduleCalendar({
-  year,
-  month,
+  weekStartISO,
   events,
   basePath,
   extraQuery,
   shiftLegend,
 }: {
-  year: number;
-  month: number;
+  weekStartISO: string;
   events: ScheduleEvent[];
   basePath: string;
   extraQuery?: string;
   shiftLegend: { name: string; color: ShiftColor }[];
 }) {
-  const monthEvents: MonthCalendarEvent[] = events.map((e) => ({
+  const weekEvents: MonthCalendarEvent[] = events.map((e) => ({
     id: e.id,
     start_date: e.date,
     end_date: e.date,
@@ -44,14 +43,12 @@ export function ScheduleCalendar({
   );
 
   return (
-    <MonthCalendar
-      year={year}
-      month={month}
-      events={monthEvents}
+    <WeekCalendar
+      weekStartISO={weekStartISO}
+      events={weekEvents}
       basePath={basePath}
       extraQuery={extraQuery}
       legend={legend}
-      emptyAgendaMessage="No shifts assigned this month."
     />
   );
 }

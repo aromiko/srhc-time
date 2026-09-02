@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/leave-utils";
 import { StatusBadge } from "@/components/status-badge";
+import { SubmitButton } from "@/components/submit-button";
 import { updateRequestStatus } from "./actions";
 import type { LeaveStatus } from "@/lib/types";
 
@@ -122,13 +123,13 @@ export default async function AdminRequestsPage({
                   className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
                 />
               </div>
-              <button
-                type="submit"
+              <SubmitButton
                 formAction={updateRequestStatus}
+                pendingText="Saving…"
                 className="rounded-md bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
               >
                 Save
-              </button>
+              </SubmitButton>
             </form>
           </div>
         ))}

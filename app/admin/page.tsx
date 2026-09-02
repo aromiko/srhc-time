@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/leave-utils";
+import { SubmitButton } from "@/components/submit-button";
 import { approveRequest, declineRequest } from "./actions";
 
 type PendingRequest = {
@@ -79,20 +80,20 @@ export default async function AdminHomePage({
                     className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
                   />
                 </div>
-                <button
-                  type="submit"
+                <SubmitButton
                   formAction={approveRequest}
+                  pendingText="Approving…"
                   className="rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
                 >
                   Approve
-                </button>
-                <button
-                  type="submit"
+                </SubmitButton>
+                <SubmitButton
                   formAction={declineRequest}
+                  pendingText="Declining…"
                   className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
                 >
                   Decline
-                </button>
+                </SubmitButton>
               </form>
             </div>
           ))}

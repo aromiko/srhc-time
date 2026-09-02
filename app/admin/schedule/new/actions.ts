@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
+import { withSuccess, withError } from "@/lib/flash";
+import { resolveWeekStart } from "@/lib/calendar-utils";
 
 function eachDateISO(startDate: string, endDate: string): string[] {
   const start = new Date(startDate + "T00:00:00");
@@ -38,8 +40,10 @@ export async function assignSchedule(formData: FormData) {
 
   if (!userId || !shiftTypeId || dates.length === 0) {
     redirect(
-      "/admin/schedule/new?error=" +
-        encodeURIComponent("Please pick an employee, shift, and a valid date range."),
+      withError(
+        "/admin/schedule/new",
+        "Please pick an employee, shift, and a valid date range.",
+      ),
     );
   }
 
@@ -55,10 +59,13 @@ export async function assignSchedule(formData: FormData) {
   );
 
   if (error) {
-    redirect("/admin/schedule/new?error=" + encodeURIComponent(error.message));
+    redirect(withError("/admin/schedule/new", error.message));
   }
 
   revalidatePath("/admin/calendar");
   revalidatePath("/dashboard/calendar");
-  redirect("/admin/calendar?view=schedule");
+  // Land on the week the assignment starts in, so the admin sees what they
+  // just assigned instead of whatever week they happened to be on before.
+  const targetWeek = resolveWeekStart(startDate);
+  redirect(withSuccess(`/admin/calendar?w=${targetWeek}`, "Schedule assigned."));
 }

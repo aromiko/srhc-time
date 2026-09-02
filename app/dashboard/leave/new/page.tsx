@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
+import { SubmitButton } from "@/components/submit-button";
 import { submitLeaveRequest } from "./actions";
 
 export default async function NewLeaveRequestPage({
@@ -95,12 +96,12 @@ export default async function NewLeaveRequestPage({
           end dates, inclusive.
         </p>
 
-        <button
-          type="submit"
-          className="w-full rounded-md bg-brand-700 px-4 py-3 text-base font-medium text-white hover:bg-brand-800"
+        <SubmitButton
+          pendingText="Submitting…"
+          className="w-full justify-center rounded-md bg-brand-700 px-4 py-3 text-base font-medium text-white hover:bg-brand-800"
         >
           Submit Request
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );
