@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/status-badge";
 import { ResponsiveTable, type Column } from "@/components/responsive-table";
+import { SubmitButton } from "@/components/submit-button";
 import { formatDate } from "@/lib/leave-utils";
 import type { Profile } from "@/lib/types";
 import { updateLeaveBalance, updateProfile } from "./actions";
@@ -98,12 +99,12 @@ export default async function EmployeeDetailPage({
             defaultValue={b.allocated}
             className="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           />
-          <button
-            type="submit"
+          <SubmitButton
+            pendingText="Saving…"
             className="rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
           >
             Save
-          </button>
+          </SubmitButton>
         </form>
       ),
     },
@@ -179,12 +180,12 @@ export default async function EmployeeDetailPage({
             />
           </div>
           <div className="sm:col-span-3">
-            <button
-              type="submit"
+            <SubmitButton
+              pendingText="Saving…"
               className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
             >
               Save Profile
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </section>

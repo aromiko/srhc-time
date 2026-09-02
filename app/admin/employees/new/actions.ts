@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { withSuccess, withError } from "@/lib/flash";
 
 export async function createEmployee(formData: FormData) {
   const { supabase } = await requireAdmin();
@@ -16,10 +17,10 @@ export async function createEmployee(formData: FormData) {
 
   if (!fullName || !email || password.length < 8) {
     redirect(
-      "/admin/employees/new?error=" +
-        encodeURIComponent(
-          "Full name, email, and a password of at least 8 characters are required.",
-        ),
+      withError(
+        "/admin/employees/new",
+        "Full name, email, and a password of at least 8 characters are required.",
+      ),
     );
   }
 
@@ -33,8 +34,7 @@ export async function createEmployee(formData: FormData) {
 
   if (createError || !created.user) {
     redirect(
-      "/admin/employees/new?error=" +
-        encodeURIComponent(createError?.message ?? "Could not create employee."),
+      withError("/admin/employees/new", createError?.message ?? "Could not create employee."),
     );
   }
 
@@ -69,5 +69,5 @@ export async function createEmployee(formData: FormData) {
     );
   }
 
-  redirect(`/admin/employees/${newUserId}`);
+  redirect(withSuccess(`/admin/employees/${newUserId}`, "Employee created."));
 }

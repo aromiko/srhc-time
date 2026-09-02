@@ -66,3 +66,50 @@ export function resolveYearMonth(y?: string, m?: string): { year: number; month:
   const month = Math.min(12, Math.max(1, Number(m) || now.getMonth() + 1));
   return { year, month };
 }
+
+function startOfWeek(date: Date): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+/** Resolves an arbitrary ?w= (any ISO date within the target week) to that week's Sunday. */
+export function resolveWeekStart(w?: string): string {
+  const parsed = w ? new Date(w + "T00:00:00") : new Date();
+  const base = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  return toISODate(startOfWeek(base));
+}
+
+/** The 7 days (Sun-Sat) of the week starting at weekStartISO. */
+export function getWeekDays(weekStartISO: string): CalendarDay[] {
+  const start = new Date(weekStartISO + "T00:00:00");
+  const todayIso = toISODate(new Date());
+  const days: CalendarDay[] = [];
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(start);
+    date.setDate(start.getDate() + i);
+    const iso = toISODate(date);
+    days.push({ date, iso, inMonth: true, isToday: iso === todayIso });
+  }
+  return days;
+}
+
+export function addDaysISO(iso: string, days: number): string {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return toISODate(d);
+}
+
+export function formatWeekRange(weekStartISO: string): string {
+  const days = getWeekDays(weekStartISO);
+  const start = days[0].date;
+  const end = days[6].date;
+  const fmt = (d: Date, withYear: boolean) =>
+    d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: withYear ? "numeric" : undefined,
+    });
+  return `${fmt(start, start.getFullYear() !== end.getFullYear())} - ${fmt(end, true)}`;
+}

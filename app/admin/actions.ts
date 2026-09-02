@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { applyLeaveStatusChange } from "@/lib/leave-requests";
+import { withSuccess, withError } from "@/lib/flash";
 
 export async function approveRequest(formData: FormData) {
   const { supabase, adminId } = await requireAdmin();
@@ -17,11 +18,11 @@ export async function approveRequest(formData: FormData) {
     adminId,
     adminNotes,
   );
-  if (error) redirect("/admin?error=" + encodeURIComponent(error));
+  if (error) redirect(withError("/admin", error));
 
   revalidatePath("/admin");
   revalidatePath("/admin/requests");
-  redirect("/admin");
+  redirect(withSuccess("/admin", "Request approved."));
 }
 
 export async function declineRequest(formData: FormData) {
@@ -36,9 +37,9 @@ export async function declineRequest(formData: FormData) {
     adminId,
     adminNotes,
   );
-  if (error) redirect("/admin?error=" + encodeURIComponent(error));
+  if (error) redirect(withError("/admin", error));
 
   revalidatePath("/admin");
   revalidatePath("/admin/requests");
-  redirect("/admin");
+  redirect(withSuccess("/admin", "Request declined."));
 }

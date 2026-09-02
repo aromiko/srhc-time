@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { countWeekdays } from "@/lib/leave-utils";
+import { withSuccess } from "@/lib/flash";
 
 export async function submitLeaveRequest(formData: FormData) {
   const supabase = await createClient();
@@ -42,5 +43,5 @@ export async function submitLeaveRequest(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  redirect(withSuccess("/dashboard", "Leave request submitted."));
 }

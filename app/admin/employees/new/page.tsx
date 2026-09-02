@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { createEmployee } from "./actions";
 
 export default async function NewEmployeePage({
@@ -105,12 +106,12 @@ export default async function NewEmployeePage({
           </select>
         </div>
 
-        <button
-          type="submit"
-          className="w-full rounded-md bg-brand-700 px-4 py-3 text-base font-medium text-white hover:bg-brand-800"
+        <SubmitButton
+          pendingText="Creating…"
+          className="w-full justify-center rounded-md bg-brand-700 px-4 py-3 text-base font-medium text-white hover:bg-brand-800"
         >
           Create Employee
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );
