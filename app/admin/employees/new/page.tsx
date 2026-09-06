@@ -1,4 +1,5 @@
 import { SubmitButton } from "@/components/submit-button";
+import { BackLink } from "@/components/back-link";
 import { createEmployee } from "./actions";
 
 export default async function NewEmployeePage({
@@ -10,6 +11,7 @@ export default async function NewEmployeePage({
 
   return (
     <div className="mx-auto max-w-lg">
+      <BackLink href="/admin/employees" label="Back to Employees" />
       <h1 className="text-lg font-semibold text-slate-900">New Employee</h1>
 
       {error && (
@@ -33,6 +35,21 @@ export default async function NewEmployeePage({
             required
             className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           />
+        </div>
+
+        <div>
+          <label htmlFor="nickname" className="block text-sm font-medium text-slate-700">
+            Nickname (optional)
+          </label>
+          <input
+            id="nickname"
+            name="nickname"
+            type="text"
+            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            Shown on calendar views instead of the full name, which can get cut off there.
+          </p>
         </div>
 
         <div>

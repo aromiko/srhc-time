@@ -9,6 +9,7 @@ import {
 } from "@/lib/calendar-utils";
 import { LeaveCalendar, type CalendarEvent } from "@/components/leave-calendar";
 import { ScheduleCalendar, type ScheduleEvent } from "@/components/schedule-calendar";
+import { displayName } from "@/lib/profile-utils";
 import type { ShiftColor } from "@/lib/types";
 
 type ApprovedRow = {
@@ -16,7 +17,7 @@ type ApprovedRow = {
   user_id: string;
   start_date: string;
   end_date: string;
-  profile: { full_name: string } | null;
+  profile: { full_name: string; nickname: string | null } | null;
   leave_type: { name: string } | null;
 };
 
@@ -57,7 +58,7 @@ export default async function EmployeeCalendarPage({
         .from("leave_requests")
         .select(
           "id, user_id, start_date, end_date, " +
-            "profile:profiles!leave_requests_user_id_fkey(full_name), " +
+            "profile:profiles!leave_requests_user_id_fkey(full_name, nickname), " +
             "leave_type:leave_types(name)",
         )
         .eq("status", "approved")
@@ -78,7 +79,7 @@ export default async function EmployeeCalendarPage({
         .eq("user_id", user.profile.id)
         .gte("date", weekStartISO)
         .lte("date", weekEndISO),
-      supabase.from("shift_types").select("name, color").eq("is_active", true).order("name"),
+      supabase.from("shift_types").select("name, color").eq("is_active", true).order("sort_order"),
     ]);
 
   const leaveEvents: CalendarEvent[] = [
@@ -88,7 +89,7 @@ export default async function EmployeeCalendarPage({
       end_date: r.end_date,
       status: "approved" as const,
       mine: r.user_id === user.profile.id,
-      label: `${r.user_id === user.profile.id ? "You" : r.profile?.full_name} · ${r.leave_type?.name}`,
+      label: `${r.user_id === user.profile.id ? "You" : r.profile ? displayName(r.profile) : "—"} · ${r.leave_type?.name}`,
     })),
     ...((ownPending ?? []) as unknown as OwnPendingRow[]).map((r) => ({
       id: r.id,

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { ToastListener } from "@/components/toast-listener";
@@ -30,7 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-slate-50">
         {children}
-        <ToastListener />
+        <Suspense fallback={null}>
+          <ToastListener />
+        </Suspense>
         <Toaster position="top-center" richColors closeButton />
       </body>
     </html>

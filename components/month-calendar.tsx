@@ -8,6 +8,8 @@ export type MonthCalendarEvent = {
   end_date: string;
   label: string;
   className: string;
+  /** Optional group heading (e.g. shift type) - see WeekCalendar. Unused by the month grid/agenda. */
+  groupLabel?: string;
 };
 
 export function MonthCalendar({
