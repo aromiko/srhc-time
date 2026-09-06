@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatDate } from "@/lib/leave-utils";
+import { formatDate, nextBirthdayWithin } from "@/lib/leave-utils";
+import { toISODate } from "@/lib/calendar-utils";
 import { SubmitButton } from "@/components/submit-button";
+import { StatTile } from "@/components/stat-tile";
+import { displayName } from "@/lib/profile-utils";
 import { approveRequest, declineRequest } from "./actions";
 
 type PendingRequest = {
@@ -13,6 +16,24 @@ type PendingRequest = {
   leave_type: { name: string } | null;
 };
 
+type OnLeaveToday = {
+  id: string;
+  profile: { full_name: string; nickname: string | null } | null;
+  leave_type: { name: string } | null;
+};
+
+type OnDutyToday = {
+  id: string;
+  profile: { full_name: string; nickname: string | null } | null;
+  shift_type: { name: string } | null;
+};
+
+type BirthdayProfile = {
+  id: string;
+  full_name: string;
+  birthday: string;
+};
+
 export default async function AdminHomePage({
   searchParams,
 }: {
@@ -20,24 +41,102 @@ export default async function AdminHomePage({
 }) {
   const { error } = await searchParams;
   const supabase = await createClient();
+  const todayISO = toISODate(new Date());
 
-  const { data: requests, error: requestsError } = await supabase
-    .from("leave_requests")
-    .select(
-      "id, start_date, end_date, days_requested, reason, profile:profiles!leave_requests_user_id_fkey(full_name), leave_type:leave_types(name)",
-    )
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
+  const [
+    { data: requests, error: requestsError },
+    { count: employeeCount },
+    { data: onLeaveToday },
+    { data: onDutyToday },
+    { data: birthdayProfiles },
+  ] = await Promise.all([
+    supabase
+      .from("leave_requests")
+      .select(
+        "id, start_date, end_date, days_requested, reason, profile:profiles!leave_requests_user_id_fkey(full_name), leave_type:leave_types(name)",
+      )
+      .eq("status", "pending")
+      .order("created_at", { ascending: true }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase
+      .from("leave_requests")
+      .select(
+        "id, profile:profiles!leave_requests_user_id_fkey(full_name, nickname), leave_type:leave_types(name)",
+      )
+      .eq("status", "approved")
+      .lte("start_date", todayISO)
+      .gte("end_date", todayISO),
+    supabase
+      .from("schedules")
+      .select(
+        "id, profile:profiles!schedules_user_id_fkey(full_name, nickname), shift_type:shift_types(name)",
+      )
+      .eq("date", todayISO),
+    supabase.from("profiles").select("id, full_name, birthday").not("birthday", "is", null),
+  ]);
 
   if (requestsError) {
     console.error("Failed to load pending leave requests:", requestsError);
   }
 
   const pending = (requests ?? []) as unknown as PendingRequest[];
+  const leaveToday = (onLeaveToday ?? []) as unknown as OnLeaveToday[];
+  const dutyToday = (onDutyToday ?? []) as unknown as OnDutyToday[];
+
+  const birthdaysThisWeek = ((birthdayProfiles ?? []) as unknown as BirthdayProfile[])
+    .map((p) => ({ ...p, ...nextBirthdayWithin(p.birthday, 7) }))
+    .filter((p) => p.withinRange)
+    .sort((a, b) => a.nextOccurrence.getTime() - b.nextOccurrence.getTime());
+
+  const todayLabel = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+
+  const hasTodayInfo = leaveToday.length > 0 || dutyToday.length > 0 || birthdaysThisWeek.length > 0;
 
   return (
     <div>
-      <h1 className="text-lg font-semibold text-slate-900">Pending Leave Requests</h1>
+      <div className="flex gap-3">
+        <StatTile label="Pending" value={pending.length} href="/admin/requests?status=pending" />
+        <StatTile label="Employees" value={employeeCount ?? 0} href="/admin/employees" />
+        <StatTile label="Out Today" value={leaveToday.length} href="/admin/calendar" />
+      </div>
+
+      <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+        <p className="text-sm font-semibold text-slate-900">Today, {todayLabel}</p>
+        {!hasTodayInfo ? (
+          <p className="mt-1 text-sm text-slate-400">Nothing notable today.</p>
+        ) : (
+          <div className="mt-2 space-y-1 text-sm text-slate-700">
+            {leaveToday.map((r) => (
+              <p key={r.id}>
+                🌴{" "}
+                <span className="font-medium">{r.profile ? displayName(r.profile) : "—"}</span>{" "}
+                is on {r.leave_type?.name} leave
+              </p>
+            ))}
+            {dutyToday.map((r) => (
+              <p key={r.id}>
+                🕖{" "}
+                <span className="font-medium">{r.profile ? displayName(r.profile) : "—"}</span>{" "}
+                is on {r.shift_type?.name}
+              </p>
+            ))}
+            {birthdaysThisWeek.map((p) => (
+              <p key={p.id}>
+                🎂 <span className="font-medium">{p.full_name}</span>&apos;s birthday
+                {toISODate(p.nextOccurrence) === todayISO
+                  ? " is today!"
+                  : ` is ${p.nextOccurrence.toLocaleDateString("en-US", { weekday: "long" })}`}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <h1 className="mt-8 text-lg font-semibold text-slate-900">Pending Leave Requests</h1>
 
       {error && (
         <div className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">

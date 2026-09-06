@@ -24,6 +24,17 @@ export function WeekCalendar({
 
   const eventsOn = (iso: string) => events.filter((e) => e.start_date <= iso && e.end_date >= iso);
 
+  // Assumes `events` already arrives sorted by group - flags the first
+  // event of each run of a shared groupLabel so a header can precede it.
+  const withGroupHeaders = (dayEvents: MonthCalendarEvent[]) => {
+    let lastGroup: string | undefined;
+    return dayEvents.map((event) => {
+      const showHeader = !!event.groupLabel && event.groupLabel !== lastGroup;
+      lastGroup = event.groupLabel;
+      return { event, showHeader };
+    });
+  };
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -68,10 +79,15 @@ export function WeekCalendar({
               </p>
               <div className="mt-2 space-y-1.5">
                 {dayEvents.length === 0 && <p className="text-sm text-slate-400">—</p>}
-                {dayEvents.map((e) => (
-                  <p key={e.id} className={`rounded px-2 py-1 text-sm ${e.className}`}>
-                    {e.label}
-                  </p>
+                {withGroupHeaders(dayEvents).map(({ event: e, showHeader }) => (
+                  <div key={e.id}>
+                    {showHeader && (
+                      <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                        {e.groupLabel}
+                      </p>
+                    )}
+                    <p className={`rounded px-2 py-1 text-sm ${e.className}`}>{e.label}</p>
+                  </div>
                 ))}
               </div>
             </div>
@@ -98,19 +114,22 @@ export function WeekCalendar({
                     {day.date.getDate()}
                   </p>
                 </div>
-                <div className="min-h-32 space-y-1 p-1.5">
-                  {dayEvents.slice(0, 6).map((e) => (
-                    <p
-                      key={e.id}
-                      title={e.label}
-                      className={`truncate rounded px-1.5 py-0.5 text-[11px] leading-tight ${e.className}`}
-                    >
-                      {e.label}
-                    </p>
+                <div className="min-h-32 space-y-0.5 p-1.5">
+                  {withGroupHeaders(dayEvents).map(({ event: e, showHeader }) => (
+                    <div key={e.id}>
+                      {showHeader && (
+                        <p className="mt-1.5 text-[9px] font-semibold tracking-wide text-slate-400 uppercase first:mt-0">
+                          {e.groupLabel}
+                        </p>
+                      )}
+                      <p
+                        title={e.label}
+                        className={`truncate rounded px-1.5 py-0.5 text-[11px] leading-tight ${e.className}`}
+                      >
+                        {e.label}
+                      </p>
+                    </div>
                   ))}
-                  {dayEvents.length > 6 && (
-                    <p className="text-[10px] text-slate-400">+{dayEvents.length - 6} more</p>
-                  )}
                 </div>
               </div>
             );

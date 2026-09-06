@@ -8,6 +8,15 @@ export type ScheduleEvent = {
   date: string;
   label: string;
   color: ShiftColor;
+  /**
+   * Shift type name - shown once as a heading per group of same-shift
+   * entries on a day. Omit when a day can only ever have one entry (e.g. an
+   * employee's own schedule), where a group header would just repeat the
+   * label right below it.
+   */
+  groupLabel?: string;
+  /** shift_types.sort_order - keeps e.g. 7AM Duty at the top of each day rather than alphabetical. */
+  sortOrder?: number;
 };
 
 export function ScheduleCalendar({
@@ -23,13 +32,16 @@ export function ScheduleCalendar({
   extraQuery?: string;
   shiftLegend: { name: string; color: ShiftColor }[];
 }) {
-  const weekEvents: MonthCalendarEvent[] = events.map((e) => ({
-    id: e.id,
-    start_date: e.date,
-    end_date: e.date,
-    label: e.label,
-    className: SHIFT_PILL_CLASSES[e.color],
-  }));
+  const weekEvents: MonthCalendarEvent[] = [...events]
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map((e) => ({
+      id: e.id,
+      start_date: e.date,
+      end_date: e.date,
+      label: e.label,
+      className: SHIFT_PILL_CLASSES[e.color],
+      groupLabel: e.groupLabel,
+    }));
 
   const legend = (
     <>

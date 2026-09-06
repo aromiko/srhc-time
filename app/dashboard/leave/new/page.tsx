@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { SubmitButton } from "@/components/submit-button";
+import { BackLink } from "@/components/back-link";
 import { submitLeaveRequest } from "./actions";
 
 export default async function NewLeaveRequestPage({
@@ -22,6 +23,7 @@ export default async function NewLeaveRequestPage({
 
   return (
     <div className="mx-auto max-w-lg">
+      <BackLink href="/dashboard" label="Back to My Leave" />
       <h1 className="text-lg font-semibold text-slate-900">File a Leave Request</h1>
 
       {error && (

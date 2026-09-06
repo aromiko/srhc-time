@@ -12,6 +12,7 @@ import { LeaveCalendar, type CalendarEvent } from "@/components/leave-calendar";
 import { ScheduleCalendar, type ScheduleEvent } from "@/components/schedule-calendar";
 import { SubmitButton } from "@/components/submit-button";
 import { updateSchedule, deleteSchedule } from "@/app/admin/schedule/actions";
+import { displayName } from "@/lib/profile-utils";
 import type { ShiftColor } from "@/lib/types";
 
 type LeaveRow = {
@@ -20,7 +21,7 @@ type LeaveRow = {
   start_date: string;
   end_date: string;
   status: "pending" | "approved";
-  profile: { full_name: string } | null;
+  profile: { full_name: string; nickname: string | null } | null;
   leave_type: { name: string } | null;
 };
 
@@ -30,8 +31,8 @@ type ScheduleRow = {
   user_id: string;
   shift_type_id: string;
   notes: string | null;
-  profile: { full_name: string } | null;
-  shift_type: { name: string; color: ShiftColor } | null;
+  profile: { full_name: string; nickname: string | null } | null;
+  shift_type: { name: string; color: ShiftColor; sort_order: number } | null;
 };
 
 const BASE_PATH = "/admin/calendar";
@@ -58,19 +59,23 @@ export default async function AdminCalendarPage({
         .from("leave_requests")
         .select(
           "id, user_id, start_date, end_date, status, " +
-            "profile:profiles!leave_requests_user_id_fkey(full_name), " +
+            "profile:profiles!leave_requests_user_id_fkey(full_name, nickname), " +
             "leave_type:leave_types(name)",
         )
         .in("status", ["pending", "approved"])
         .lte("start_date", monthEndISO)
         .gte("end_date", monthStartISO),
-      supabase.from("shift_types").select("id, name, color").eq("is_active", true).order("name"),
+      supabase
+        .from("shift_types")
+        .select("id, name, color, sort_order")
+        .eq("is_active", true)
+        .order("sort_order"),
       supabase
         .from("schedules")
         .select(
           "id, date, user_id, shift_type_id, notes, " +
-            "profile:profiles!schedules_user_id_fkey(full_name), " +
-            "shift_type:shift_types(name, color)",
+            "profile:profiles!schedules_user_id_fkey(full_name, nickname), " +
+            "shift_type:shift_types(name, color, sort_order)",
         )
         .gte("date", weekStartISO)
         .lte("date", weekEndISO)
@@ -87,7 +92,7 @@ export default async function AdminCalendarPage({
       end_date: r.end_date,
       status: r.status,
       mine: r.user_id === user?.profile.id,
-      label: `${r.profile?.full_name} · ${r.leave_type?.name}${r.status === "pending" ? " (pending)" : ""}`,
+      label: `${r.profile ? displayName(r.profile) : "—"} · ${r.leave_type?.name}${r.status === "pending" ? " (pending)" : ""}`,
     }),
   );
 
@@ -96,11 +101,17 @@ export default async function AdminCalendarPage({
     id: r.id,
     date: r.date,
     color: r.shift_type?.color ?? "blue",
-    label: `${r.profile?.full_name} · ${r.shift_type?.name}`,
+    // Just the name - the shift type is already the group header above it.
+    label: r.profile ? displayName(r.profile) : "—",
+    groupLabel: r.shift_type?.name ?? "",
+    sortOrder: r.shift_type?.sort_order ?? 999,
   }));
 
   const filteredRows = search
-    ? scheduleRows.filter((r) => r.profile?.full_name?.toLowerCase().includes(search))
+    ? scheduleRows.filter((r) => {
+        const name = r.profile ? `${r.profile.full_name} ${r.profile.nickname ?? ""}` : "";
+        return name.toLowerCase().includes(search);
+      })
     : scheduleRows;
 
   // Grouped by day (rows already arrive date-sorted) so the date only has
@@ -215,7 +226,7 @@ export default async function AdminCalendarPage({
                         <input type="hidden" name="id" value={r.id} />
                         <input type="hidden" name="redirect_to" value={redirectTo} />
                         <span className="min-w-28 flex-1 text-sm font-medium text-slate-800">
-                          {r.profile?.full_name}
+                          {r.profile ? displayName(r.profile) : "—"}
                         </span>
                         <select
                           name="shift_type_id"

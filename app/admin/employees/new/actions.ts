@@ -14,6 +14,7 @@ export async function createEmployee(formData: FormData) {
   const role = String(formData.get("role") ?? "employee") as "admin" | "employee";
   const mobileNumber = String(formData.get("mobile_number") ?? "").trim();
   const birthday = String(formData.get("birthday") ?? "").trim();
+  const nickname = String(formData.get("nickname") ?? "").trim();
 
   if (!fullName || !email || password.length < 8) {
     redirect(
@@ -41,13 +42,14 @@ export async function createEmployee(formData: FormData) {
   const newUserId = created.user.id;
 
   // The DB trigger already created a profile row with the name/role from
-  // user_metadata. Fill in the contact fields it doesn't know about.
-  if (mobileNumber || birthday) {
+  // user_metadata. Fill in the fields it doesn't know about.
+  if (mobileNumber || birthday || nickname) {
     await supabase
       .from("profiles")
       .update({
         mobile_number: mobileNumber || null,
         birthday: birthday || null,
+        nickname: nickname || null,
       })
       .eq("id", newUserId);
   }

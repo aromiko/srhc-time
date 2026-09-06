@@ -27,3 +27,26 @@ export function formatDate(isoDate: string): string {
     day: "numeric",
   });
 }
+
+/**
+ * Birthdays recur yearly, so this compares month/day only - finds this
+ * year's occurrence, rolls to next year if it's already passed, and reports
+ * whether that next occurrence falls within the next `days` days (handles
+ * the December-to-January wraparound for free since it's just date math).
+ */
+export function nextBirthdayWithin(
+  birthdayISO: string,
+  days: number,
+  from: Date = new Date(),
+): { withinRange: boolean; nextOccurrence: Date } {
+  const birthday = new Date(birthdayISO + "T00:00:00");
+  const today = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+
+  let occurrence = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
+  if (occurrence < today) {
+    occurrence = new Date(today.getFullYear() + 1, birthday.getMonth(), birthday.getDate());
+  }
+
+  const diffDays = Math.round((occurrence.getTime() - today.getTime()) / 86_400_000);
+  return { withinRange: diffDays < days, nextOccurrence: occurrence };
+}

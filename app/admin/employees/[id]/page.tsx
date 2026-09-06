@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/status-badge";
 import { ResponsiveTable, type Column } from "@/components/responsive-table";
 import { SubmitButton } from "@/components/submit-button";
+import { BackLink } from "@/components/back-link";
 import { formatDate } from "@/lib/leave-utils";
 import type { Profile } from "@/lib/types";
 import { updateLeaveBalance, updateProfile } from "./actions";
@@ -126,7 +127,11 @@ export default async function EmployeeDetailPage({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">{p.full_name}</h1>
+        <BackLink href="/admin/employees" label="Back to Employees" />
+        <h1 className="text-lg font-semibold text-slate-900">
+          {p.full_name}
+          {p.nickname && <span className="font-normal text-slate-400"> ({p.nickname})</span>}
+        </h1>
         <p className="text-sm capitalize text-slate-500">{p.role}</p>
       </div>
 
@@ -138,7 +143,7 @@ export default async function EmployeeDetailPage({
         <h2 className="text-base font-semibold text-slate-900">Profile</h2>
         <form
           action={updateProfile}
-          className="mt-3 grid gap-4 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-3"
+          className="mt-3 grid gap-4 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           <input type="hidden" name="user_id" value={id} />
           <div>
@@ -151,6 +156,19 @@ export default async function EmployeeDetailPage({
               type="text"
               required
               defaultValue={p.full_name}
+              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+            />
+          </div>
+          <div>
+            <label htmlFor="nickname" className="block text-sm font-medium text-slate-700">
+              Nickname
+            </label>
+            <input
+              id="nickname"
+              name="nickname"
+              type="text"
+              defaultValue={p.nickname ?? ""}
+              placeholder="Shown on calendars"
               className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
             />
           </div>
@@ -179,7 +197,7 @@ export default async function EmployeeDetailPage({
               className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
             />
           </div>
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-2 lg:col-span-4">
             <SubmitButton
               pendingText="Saving…"
               className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"

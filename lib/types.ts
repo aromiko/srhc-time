@@ -4,6 +4,7 @@ export type LeaveStatus = "pending" | "approved" | "declined";
 export type Profile = {
   id: string;
   full_name: string;
+  nickname: string | null;
   role: Role;
   mobile_number: string | null;
   birthday: string | null;
@@ -46,6 +47,7 @@ export type ShiftType = {
   id: string;
   name: string;
   color: ShiftColor;
+  sort_order: number;
   is_active: boolean;
 };
 

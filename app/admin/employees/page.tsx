@@ -44,14 +44,22 @@ export default async function EmployeesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-lg font-semibold text-slate-900">Employees</h1>
-        <Link
-          href="/admin/employees/new"
-          className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
-        >
-          + New Employee
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/employees/batch"
+            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          >
+            Batch Add Balance
+          </Link>
+          <Link
+            href="/admin/employees/new"
+            className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
+          >
+            + New Employee
+          </Link>
+        </div>
       </div>
 
       <div className="mt-4">

@@ -10,6 +10,7 @@ export async function updateProfile(formData: FormData) {
 
   const userId = String(formData.get("user_id") ?? "");
   const fullName = String(formData.get("full_name") ?? "").trim();
+  const nickname = String(formData.get("nickname") ?? "").trim();
   const mobileNumber = String(formData.get("mobile_number") ?? "").trim();
   const birthday = String(formData.get("birthday") ?? "").trim();
 
@@ -21,6 +22,7 @@ export async function updateProfile(formData: FormData) {
     .from("profiles")
     .update({
       full_name: fullName,
+      nickname: nickname || null,
       mobile_number: mobileNumber || null,
       birthday: birthday || null,
     })
@@ -32,6 +34,8 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath(`/admin/employees/${userId}`);
   revalidatePath("/admin/employees");
+  revalidatePath("/admin/calendar");
+  revalidatePath("/dashboard/calendar");
   redirect(withSuccess(`/admin/employees/${userId}`, "Profile updated."));
 }
 

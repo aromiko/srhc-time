@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/submit-button";
+import { BackLink } from "@/components/back-link";
 import { assignSchedule } from "./actions";
 
 export default async function NewSchedulePage({
@@ -12,11 +13,12 @@ export default async function NewSchedulePage({
 
   const [{ data: employees }, { data: shiftTypes }] = await Promise.all([
     supabase.from("profiles").select("id, full_name").order("full_name"),
-    supabase.from("shift_types").select("id, name").eq("is_active", true).order("name"),
+    supabase.from("shift_types").select("id, name").eq("is_active", true).order("sort_order"),
   ]);
 
   return (
     <div className="mx-auto max-w-lg">
+      <BackLink href="/admin/calendar" label="Back to Calendar" />
       <h1 className="text-lg font-semibold text-slate-900">Assign Schedule</h1>
 
       {error && (
