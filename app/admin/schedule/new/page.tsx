@@ -105,8 +105,10 @@ export default async function NewSchedulePage({
         </div>
 
         <p className="text-xs text-slate-400">
-          Every day in the date range (inclusive) gets this shift. Re-assigning a day someone
-          already has a shift on overwrites it.
+          Every day in the date range (inclusive) gets this shift. If someone already has a
+          <em> different</em> shift that day (e.g. a morning duty plus an afternoon meeting),
+          this adds alongside it rather than replacing it. Re-assigning the <em>same</em> shift
+          type for a day someone already has it overwrites that one.
         </p>
 
         <SubmitButton

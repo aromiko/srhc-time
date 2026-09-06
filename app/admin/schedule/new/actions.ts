@@ -55,7 +55,7 @@ export async function assignSchedule(formData: FormData) {
       notes,
       assigned_by: adminId,
     })),
-    { onConflict: "user_id,date" },
+    { onConflict: "user_id,date,shift_type_id" },
   );
 
   if (error) {
@@ -64,8 +64,10 @@ export async function assignSchedule(formData: FormData) {
 
   revalidatePath("/admin/calendar");
   revalidatePath("/dashboard/calendar");
-  // Land on the week the assignment starts in, so the admin sees what they
-  // just assigned instead of whatever week they happened to be on before.
+  // Land on the week the assignment starts in, with that day's accordion
+  // already open, so the admin sees what they just assigned right away.
   const targetWeek = resolveWeekStart(startDate);
-  redirect(withSuccess(`/admin/calendar?w=${targetWeek}`, "Schedule assigned."));
+  redirect(
+    withSuccess(`/admin/calendar?w=${targetWeek}&open=${startDate}#schedule`, "Schedule assigned."),
+  );
 }

@@ -41,7 +41,7 @@ export type LeaveRequest = {
   created_at: string;
 };
 
-export type ShiftColor = "blue" | "purple" | "fuchsia" | "green" | "orange";
+export type ShiftColor = "blue" | "purple" | "rose" | "green" | "orange" | "slate";
 
 export type ShiftType = {
   id: string;

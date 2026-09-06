@@ -40,15 +40,25 @@ const BASE_PATH = "/admin/calendar";
 export default async function AdminCalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ y?: string; m?: string; w?: string; q?: string; error?: string }>;
+  searchParams: Promise<{
+    y?: string;
+    m?: string;
+    w?: string;
+    q?: string;
+    open?: string;
+    error?: string;
+  }>;
 }) {
-  const { y, m, w, q, error } = await searchParams;
+  const { y, m, w, q, open, error } = await searchParams;
   const { year, month } = resolveYearMonth(y, m);
   const { startISO: monthStartISO, endISO: monthEndISO } = getMonthRange(year, month);
   const weekStartISO = resolveWeekStart(w);
   const weekEndISO = addDaysISO(weekStartISO, 6);
-  const redirectTo = `/admin/calendar?w=${weekStartISO}`;
   const todayISO = toISODate(new Date());
+  // Which day's accordion is expanded - defaults to today, but a Save/Remove
+  // inside a given day carries that day forward via ?open= on its redirect
+  // (see redirectToForDate below), so the accordion doesn't reset shut.
+  const openDate = open || todayISO;
   const search = (q ?? "").trim().toLowerCase();
 
   const [user, supabase] = await Promise.all([getCurrentUser(), createClient()]);
@@ -105,6 +115,7 @@ export default async function AdminCalendarPage({
     label: r.profile ? displayName(r.profile) : "—",
     groupLabel: r.shift_type?.name ?? "",
     sortOrder: r.shift_type?.sort_order ?? 999,
+    note: r.notes,
   }));
 
   const filteredRows = search
@@ -123,6 +134,12 @@ export default async function AdminCalendarPage({
     rowsByDate.set(r.date, list);
   }
 
+  // #schedule: after a Save/Remove, land back on the Schedule section
+  // instead of the very top of the page (past Leave). ?open= keeps that
+  // day's accordion expanded across the redirect.
+  const redirectToForDate = (date: string) =>
+    `/admin/calendar?w=${weekStartISO}&open=${date}#schedule`;
+
   return (
     <div className="space-y-10">
       <section>
@@ -132,7 +149,7 @@ export default async function AdminCalendarPage({
         </div>
       </section>
 
-      <section>
+      <section id="schedule">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">Schedule</h2>
           <Link
@@ -193,7 +210,7 @@ export default async function AdminCalendarPage({
                 <details
                   key={date}
                   name="week-schedule-day"
-                  open={date === todayISO}
+                  open={date === openDate}
                   className="group border-b border-slate-100 last:border-b-0"
                 >
                   <summary className="flex cursor-pointer items-center justify-between bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500 marker:content-none [&::-webkit-details-marker]:hidden">
@@ -224,7 +241,7 @@ export default async function AdminCalendarPage({
                         className="flex flex-wrap items-center gap-2 px-3 py-2"
                       >
                         <input type="hidden" name="id" value={r.id} />
-                        <input type="hidden" name="redirect_to" value={redirectTo} />
+                        <input type="hidden" name="redirect_to" value={redirectToForDate(date)} />
                         <span className="min-w-28 flex-1 text-sm font-medium text-slate-800">
                           {r.profile ? displayName(r.profile) : "—"}
                         </span>

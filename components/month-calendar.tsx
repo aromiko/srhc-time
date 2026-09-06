@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { getMonthMatrix, MONTH_LABELS, WEEKDAY_LABELS } from "@/lib/calendar-utils";
+import { PendingLink } from "@/components/pending-link";
 
 export type MonthCalendarEvent = {
   id: string;
@@ -53,24 +53,24 @@ export function MonthCalendar({
           {MONTH_LABELS[month - 1]} {year}
         </h2>
         <div className="flex items-center gap-2">
-          <Link
+          <PendingLink
             href={`${basePath}?y=${prev.y}&m=${prev.m}${suffix}`}
             className="rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
           >
             ← Prev
-          </Link>
-          <Link
+          </PendingLink>
+          <PendingLink
             href={`${basePath}?y=${now.getFullYear()}&m=${now.getMonth() + 1}${suffix}`}
             className="rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
           >
             Today
-          </Link>
-          <Link
+          </PendingLink>
+          <PendingLink
             href={`${basePath}?y=${next.y}&m=${next.m}${suffix}`}
             className="rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
           >
             Next →
-          </Link>
+          </PendingLink>
         </div>
       </div>
 

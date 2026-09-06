@@ -17,6 +17,8 @@ export type ScheduleEvent = {
   groupLabel?: string;
   /** shift_types.sort_order - keeps e.g. 7AM Duty at the top of each day rather than alphabetical. */
   sortOrder?: number;
+  /** schedules.notes - shown inline beside the name, e.g. "Dolor — DOH seminar". */
+  note?: string | null;
 };
 
 export function ScheduleCalendar({
@@ -38,7 +40,7 @@ export function ScheduleCalendar({
       id: e.id,
       start_date: e.date,
       end_date: e.date,
-      label: e.label,
+      label: e.note ? `${e.label} — ${e.note}` : e.label,
       className: SHIFT_PILL_CLASSES[e.color],
       groupLabel: e.groupLabel,
     }));
