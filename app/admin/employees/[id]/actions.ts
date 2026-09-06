@@ -47,7 +47,7 @@ export async function updateLeaveBalance(formData: FormData) {
   const allocatedDays = Number(formData.get("allocated_days") ?? "0");
 
   if (!userId || !leaveTypeId || Number.isNaN(allocatedDays) || allocatedDays < 0) {
-    redirect(withError(`/admin/employees/${userId}`, "Invalid value."));
+    redirect(withError(`/admin/employees/${userId}#balances`, "Invalid value."));
   }
 
   const { data: existing } = await supabase
@@ -72,5 +72,5 @@ export async function updateLeaveBalance(formData: FormData) {
   }
 
   revalidatePath(`/admin/employees/${userId}`);
-  redirect(withSuccess(`/admin/employees/${userId}`, "Balance updated."));
+  redirect(withSuccess(`/admin/employees/${userId}#balances`, "Balance updated."));
 }

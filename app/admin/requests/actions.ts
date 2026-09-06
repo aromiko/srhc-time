@@ -16,7 +16,7 @@ export async function updateRequestStatus(formData: FormData) {
   const adminNotes = String(formData.get("admin_notes") ?? "").trim() || null;
 
   if (!VALID_STATUSES.includes(status)) {
-    redirect(withError("/admin/requests", "Invalid status."));
+    redirect(withError("/admin/requests#history-list", "Invalid status."));
   }
 
   const { error } = await applyLeaveStatusChange(
@@ -26,9 +26,9 @@ export async function updateRequestStatus(formData: FormData) {
     adminId,
     adminNotes,
   );
-  if (error) redirect(withError("/admin/requests", error));
+  if (error) redirect(withError("/admin/requests#history-list", error));
 
   revalidatePath("/admin");
   revalidatePath("/admin/requests");
-  redirect(withSuccess("/admin/requests", "Status updated."));
+  redirect(withSuccess("/admin/requests#history-list", "Status updated."));
 }

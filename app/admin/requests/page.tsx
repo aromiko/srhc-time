@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/leave-utils";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmitButton } from "@/components/submit-button";
+import { PendingLink } from "@/components/pending-link";
 import { updateRequestStatus } from "./actions";
 import type { LeaveStatus } from "@/lib/types";
 
@@ -58,7 +58,7 @@ export default async function AdminRequestsPage({
 
       <div className="mt-4 flex gap-2">
         {FILTERS.map((f) => (
-          <Link
+          <PendingLink
             key={f}
             href={f === "all" ? "/admin/requests" : `/admin/requests?status=${f}`}
             className={`rounded-full px-3 py-1 text-sm font-medium capitalize ${
@@ -68,7 +68,7 @@ export default async function AdminRequestsPage({
             }`}
           >
             {f}
-          </Link>
+          </PendingLink>
         ))}
       </div>
 
@@ -76,7 +76,7 @@ export default async function AdminRequestsPage({
         <div className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       )}
 
-      <div className="mt-4 space-y-4">
+      <div id="history-list" className="mt-4 space-y-4">
         {rows.length === 0 && <p className="text-sm text-slate-500">No requests found.</p>}
 
         {rows.map((r) => (

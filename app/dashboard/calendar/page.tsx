@@ -31,6 +31,7 @@ type OwnPendingRow = {
 type ScheduleRow = {
   id: string;
   date: string;
+  notes: string | null;
   shift_type: { name: string; color: ShiftColor } | null;
 };
 
@@ -75,7 +76,7 @@ export default async function EmployeeCalendarPage({
       // filtering explicitly here too keeps the query's intent obvious.
       supabase
         .from("schedules")
-        .select("id, date, shift_type:shift_types(name, color)")
+        .select("id, date, notes, shift_type:shift_types(name, color)")
         .eq("user_id", user.profile.id)
         .gte("date", weekStartISO)
         .lte("date", weekEndISO),
@@ -107,6 +108,7 @@ export default async function EmployeeCalendarPage({
       date: r.date,
       color: r.shift_type?.color ?? "blue",
       label: r.shift_type?.name ?? "Shift",
+      note: r.notes,
     }),
   );
 

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { addDaysISO, formatWeekRange, getWeekDays, resolveWeekStart } from "@/lib/calendar-utils";
 import type { MonthCalendarEvent } from "@/components/month-calendar";
+import { PendingLink } from "@/components/pending-link";
 
 export function WeekCalendar({
   weekStartISO,
@@ -40,24 +40,24 @@ export function WeekCalendar({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-slate-900">{formatWeekRange(weekStartISO)}</h3>
         <div className="flex items-center gap-2">
-          <Link
+          <PendingLink
             href={`${basePath}?w=${prevWeek}${suffix}`}
             className="rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
           >
             ← Prev
-          </Link>
-          <Link
+          </PendingLink>
+          <PendingLink
             href={`${basePath}?w=${thisWeek}${suffix}`}
             className="rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
           >
             This Week
-          </Link>
-          <Link
+          </PendingLink>
+          <PendingLink
             href={`${basePath}?w=${nextWeek}${suffix}`}
             className="rounded-md border border-slate-200 px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
           >
             Next →
-          </Link>
+          </PendingLink>
         </div>
       </div>
 
@@ -123,8 +123,7 @@ export function WeekCalendar({
                         </p>
                       )}
                       <p
-                        title={e.label}
-                        className={`truncate rounded px-1.5 py-0.5 text-[11px] leading-tight ${e.className}`}
+                        className={`rounded px-1.5 py-0.5 text-[11px] leading-tight wrap-break-word ${e.className}`}
                       >
                         {e.label}
                       </p>

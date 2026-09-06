@@ -136,7 +136,9 @@ export default async function AdminHomePage({
         )}
       </div>
 
-      <h1 className="mt-8 text-lg font-semibold text-slate-900">Pending Leave Requests</h1>
+      <h1 id="pending-requests" className="mt-8 text-lg font-semibold text-slate-900">
+        Pending Leave Requests
+      </h1>
 
       {error && (
         <div className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">

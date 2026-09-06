@@ -18,11 +18,11 @@ export async function approveRequest(formData: FormData) {
     adminId,
     adminNotes,
   );
-  if (error) redirect(withError("/admin", error));
+  if (error) redirect(withError("/admin#pending-requests", error));
 
   revalidatePath("/admin");
   revalidatePath("/admin/requests");
-  redirect(withSuccess("/admin", "Request approved."));
+  redirect(withSuccess("/admin#pending-requests", "Request approved."));
 }
 
 export async function declineRequest(formData: FormData) {
@@ -37,9 +37,9 @@ export async function declineRequest(formData: FormData) {
     adminId,
     adminNotes,
   );
-  if (error) redirect(withError("/admin", error));
+  if (error) redirect(withError("/admin#pending-requests", error));
 
   revalidatePath("/admin");
   revalidatePath("/admin/requests");
-  redirect(withSuccess("/admin", "Request declined."));
+  redirect(withSuccess("/admin#pending-requests", "Request declined."));
 }

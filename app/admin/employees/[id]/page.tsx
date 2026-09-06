@@ -208,7 +208,7 @@ export default async function EmployeeDetailPage({
         </form>
       </section>
 
-      <section>
+      <section id="balances">
         <h2 className="text-base font-semibold text-slate-900">Leave Balances</h2>
         <div className="mt-3">
           <ResponsiveTable
