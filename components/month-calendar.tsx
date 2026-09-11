@@ -39,6 +39,17 @@ export function MonthCalendar({
   const eventsOn = (iso: string) =>
     events.filter((e) => e.start_date <= iso && e.end_date >= iso);
 
+  // Assumes `events` already arrives sorted by group - flags the first
+  // event of each run of a shared groupLabel so a header can precede it.
+  const withGroupHeaders = (dayEvents: MonthCalendarEvent[]) => {
+    let lastGroup: string | undefined;
+    return dayEvents.map((event) => {
+      const showHeader = !!event.groupLabel && event.groupLabel !== lastGroup;
+      lastGroup = event.groupLabel;
+      return { event, showHeader };
+    });
+  };
+
   // Agenda: one entry per in-month day that has at least one event.
   const agendaDays = weeks
     .flat()
@@ -90,10 +101,15 @@ export function MonthCalendar({
               {day.isToday && " · Today"}
             </p>
             <div className="mt-2 space-y-1.5">
-              {dayEvents.map((e) => (
-                <p key={e.id} className={`rounded px-2 py-1 text-sm ${e.className}`}>
-                  {e.label}
-                </p>
+              {withGroupHeaders(dayEvents).map(({ event: e, showHeader }) => (
+                <div key={e.id}>
+                  {showHeader && (
+                    <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                      {e.groupLabel}
+                    </p>
+                  )}
+                  <p className={`rounded px-2 py-1 text-sm ${e.className}`}>{e.label}</p>
+                </div>
               ))}
             </div>
           </div>
@@ -131,17 +147,23 @@ export function MonthCalendar({
                   {day.date.getDate()}
                 </p>
                 <div className="mt-1 space-y-0.5">
-                  {dayEvents.slice(0, 3).map((e) => (
-                    <p
-                      key={e.id}
-                      title={e.label}
-                      className={`truncate rounded px-1 py-0.5 text-[10px] leading-tight ${e.className}`}
-                    >
-                      {e.label}
-                    </p>
+                  {withGroupHeaders(dayEvents.slice(0, 4)).map(({ event: e, showHeader }) => (
+                    <div key={e.id}>
+                      {showHeader && (
+                        <p className="mt-1 text-[8px] font-semibold tracking-wide text-slate-400 uppercase first:mt-0">
+                          {e.groupLabel}
+                        </p>
+                      )}
+                      <p
+                        title={e.label}
+                        className={`truncate rounded px-1 py-0.5 text-[10px] leading-tight ${e.className}`}
+                      >
+                        {e.label}
+                      </p>
+                    </div>
                   ))}
-                  {dayEvents.length > 3 && (
-                    <p className="text-[10px] text-slate-400">+{dayEvents.length - 3} more</p>
+                  {dayEvents.length > 4 && (
+                    <p className="text-[10px] text-slate-400">+{dayEvents.length - 4} more</p>
                   )}
                 </div>
               </div>

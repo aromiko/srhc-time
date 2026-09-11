@@ -101,6 +101,24 @@ export function addDaysISO(iso: string, days: number): string {
   return toISODate(d);
 }
 
+/** Expands a start/end ISO date range into every date in between, inclusive. */
+export function eachDateISO(startDate: string, endDate: string): string[] {
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T00:00:00");
+  const dates: string[] = [];
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+    return dates;
+  }
+
+  const cursor = new Date(start);
+  while (cursor <= end) {
+    dates.push(toISODate(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+}
+
 export function formatWeekRange(weekStartISO: string): string {
   const days = getWeekDays(weekStartISO);
   const start = days[0].date;

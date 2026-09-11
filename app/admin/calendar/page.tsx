@@ -12,7 +12,9 @@ import { LeaveCalendar, type CalendarEvent } from "@/components/leave-calendar";
 import { ScheduleCalendar, type ScheduleEvent } from "@/components/schedule-calendar";
 import { SubmitButton } from "@/components/submit-button";
 import { updateSchedule, deleteSchedule } from "@/app/admin/schedule/actions";
+import { updateAbsence, deleteAbsence } from "@/app/admin/absence/actions";
 import { displayName } from "@/lib/profile-utils";
+import { formatDate, leaveTypeAbbr } from "@/lib/leave-utils";
 import type { ShiftColor } from "@/lib/types";
 
 type LeaveRow = {
@@ -22,7 +24,15 @@ type LeaveRow = {
   end_date: string;
   status: "pending" | "approved";
   profile: { full_name: string; nickname: string | null } | null;
-  leave_type: { name: string } | null;
+  leave_type: { name: string; sort_order: number } | null;
+};
+
+type AbsenceRow = {
+  id: string;
+  user_id: string;
+  date: string;
+  reason: string | null;
+  profile: { full_name: string; nickname: string | null } | null;
 };
 
 type ScheduleRow = {
@@ -36,6 +46,8 @@ type ScheduleRow = {
 };
 
 const BASE_PATH = "/admin/calendar";
+const ABSENCE_GROUP_LABEL = "ABSENCES";
+const ABSENCE_SORT_ORDER = 999;
 
 export default async function AdminCalendarPage({
   searchParams,
@@ -63,48 +75,75 @@ export default async function AdminCalendarPage({
 
   const [user, supabase] = await Promise.all([getCurrentUser(), createClient()]);
 
-  const [{ data: leaveRequests, error: leaveError }, { data: shiftTypes }, { data: schedules, error: scheduleError }] =
-    await Promise.all([
-      supabase
-        .from("leave_requests")
-        .select(
-          "id, user_id, start_date, end_date, status, " +
-            "profile:profiles!leave_requests_user_id_fkey(full_name, nickname), " +
-            "leave_type:leave_types(name)",
-        )
-        .in("status", ["pending", "approved"])
-        .lte("start_date", monthEndISO)
-        .gte("end_date", monthStartISO),
-      supabase
-        .from("shift_types")
-        .select("id, name, color, sort_order")
-        .eq("is_active", true)
-        .order("sort_order"),
-      supabase
-        .from("schedules")
-        .select(
-          "id, date, user_id, shift_type_id, notes, " +
-            "profile:profiles!schedules_user_id_fkey(full_name, nickname), " +
-            "shift_type:shift_types(name, color, sort_order)",
-        )
-        .gte("date", weekStartISO)
-        .lte("date", weekEndISO)
-        .order("date"),
-    ]);
+  const [
+    { data: leaveRequests, error: leaveError },
+    { data: absences, error: absenceError },
+    { data: shiftTypes },
+    { data: schedules, error: scheduleError },
+  ] = await Promise.all([
+    supabase
+      .from("leave_requests")
+      .select(
+        "id, user_id, start_date, end_date, status, " +
+          "profile:profiles!leave_requests_user_id_fkey(full_name, nickname), " +
+          "leave_type:leave_types(name, sort_order)",
+      )
+      .in("status", ["pending", "approved"])
+      .lte("start_date", monthEndISO)
+      .gte("end_date", monthStartISO),
+    supabase
+      .from("absences")
+      .select(
+        "id, user_id, date, reason, profile:profiles!absences_user_id_fkey(full_name, nickname)",
+      )
+      .gte("date", monthStartISO)
+      .lte("date", monthEndISO)
+      .order("date"),
+    supabase
+      .from("shift_types")
+      .select("id, name, color, sort_order")
+      .eq("is_active", true)
+      .order("sort_order"),
+    supabase
+      .from("schedules")
+      .select(
+        "id, date, user_id, shift_type_id, notes, " +
+          "profile:profiles!schedules_user_id_fkey(full_name, nickname), " +
+          "shift_type:shift_types(name, color, sort_order)",
+      )
+      .gte("date", weekStartISO)
+      .lte("date", weekEndISO)
+      .order("date"),
+  ]);
 
   if (leaveError) console.error("Failed to load calendar leave requests:", leaveError);
+  if (absenceError) console.error("Failed to load calendar absences:", absenceError);
   if (scheduleError) console.error("Failed to load calendar schedules:", scheduleError);
 
-  const leaveEvents: CalendarEvent[] = ((leaveRequests ?? []) as unknown as LeaveRow[]).map(
-    (r) => ({
+  const absenceRows = (absences ?? []) as unknown as AbsenceRow[];
+
+  const leaveEvents: CalendarEvent[] = [
+    ...((leaveRequests ?? []) as unknown as LeaveRow[]).map((r) => ({
       id: r.id,
       start_date: r.start_date,
       end_date: r.end_date,
       status: r.status,
       mine: r.user_id === user?.profile.id,
-      label: `${r.profile ? displayName(r.profile) : "—"} · ${r.leave_type?.name}${r.status === "pending" ? " (pending)" : ""}`,
-    }),
-  );
+      label: `${r.profile ? displayName(r.profile) : "—"}${r.status === "pending" ? " (pending)" : ""}`,
+      groupLabel: leaveTypeAbbr(r.leave_type?.name ?? ""),
+      sortOrder: r.leave_type?.sort_order ?? 998,
+    })),
+    ...absenceRows.map((a) => ({
+      id: a.id,
+      start_date: a.date,
+      end_date: a.date,
+      status: "absent" as const,
+      mine: a.user_id === user?.profile.id,
+      label: a.profile ? displayName(a.profile) : "—",
+      groupLabel: ABSENCE_GROUP_LABEL,
+      sortOrder: ABSENCE_SORT_ORDER,
+    })),
+  ];
 
   const scheduleRows = (schedules ?? []) as unknown as ScheduleRow[];
   const scheduleEvents: ScheduleEvent[] = scheduleRows.map((r) => ({
@@ -139,13 +178,68 @@ export default async function AdminCalendarPage({
   // day's accordion expanded across the redirect.
   const redirectToForDate = (date: string) =>
     `/admin/calendar?w=${weekStartISO}&open=${date}#schedule`;
+  // #leave: same idea for the absence edit list, preserving the current
+  // month and week so neither calendar jumps around after a Save/Remove.
+  const absenceRedirectTo = `/admin/calendar?y=${year}&m=${month}&w=${weekStartISO}#leave`;
 
   return (
     <div className="space-y-10">
-      <section>
-        <h1 className="text-lg font-semibold text-slate-900">Leave</h1>
+      <section id="leave">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-slate-900">Leave and Absences</h1>
+          <Link
+            href="/admin/absence/new"
+            className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
+          >
+            + Record Absence
+          </Link>
+        </div>
         <div className="mt-3">
           <LeaveCalendar year={year} month={month} events={leaveEvents} basePath={BASE_PATH} />
+        </div>
+
+        <div className="mt-4">
+          <h3 className="text-sm font-medium text-slate-700">This Month&apos;s Absences</h3>
+          {absenceRows.length === 0 ? (
+            <p className="mt-2 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-400">
+              No absences recorded this month.
+            </p>
+          ) : (
+            <div className="mt-2 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white">
+              {absenceRows.map((a) => (
+                <form key={a.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
+                  <input type="hidden" name="id" value={a.id} />
+                  <input type="hidden" name="redirect_to" value={absenceRedirectTo} />
+                  <span className="w-20 text-xs text-slate-500">{formatDate(a.date)}</span>
+                  <span className="min-w-28 flex-1 text-sm font-medium text-slate-800">
+                    {a.profile ? displayName(a.profile) : "—"}
+                  </span>
+                  <input
+                    type="text"
+                    name="reason"
+                    aria-label="Reason"
+                    placeholder="Reason (optional)"
+                    defaultValue={a.reason ?? ""}
+                    className="w-40 rounded-md border border-slate-300 px-2 py-1 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+                  />
+                  <SubmitButton
+                    formAction={updateAbsence}
+                    pendingText="Saving…"
+                    className="rounded-md bg-slate-800 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-700"
+                  >
+                    Save
+                  </SubmitButton>
+                  <SubmitButton
+                    formAction={deleteAbsence}
+                    pendingText="Removing…"
+                    className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                  >
+                    Remove
+                  </SubmitButton>
+                </form>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

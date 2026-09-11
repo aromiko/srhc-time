@@ -28,6 +28,11 @@ type OnDutyToday = {
   shift_type: { name: string } | null;
 };
 
+type AbsentToday = {
+  id: string;
+  profile: { full_name: string; nickname: string | null } | null;
+};
+
 type BirthdayProfile = {
   id: string;
   full_name: string;
@@ -48,6 +53,7 @@ export default async function AdminHomePage({
     { count: employeeCount },
     { data: onLeaveToday },
     { data: onDutyToday },
+    { data: absentToday },
     { data: birthdayProfiles },
   ] = await Promise.all([
     supabase
@@ -72,6 +78,10 @@ export default async function AdminHomePage({
         "id, profile:profiles!schedules_user_id_fkey(full_name, nickname), shift_type:shift_types(name)",
       )
       .eq("date", todayISO),
+    supabase
+      .from("absences")
+      .select("id, profile:profiles!absences_user_id_fkey(full_name, nickname)")
+      .eq("date", todayISO),
     supabase.from("profiles").select("id, full_name, birthday").not("birthday", "is", null),
   ]);
 
@@ -82,6 +92,7 @@ export default async function AdminHomePage({
   const pending = (requests ?? []) as unknown as PendingRequest[];
   const leaveToday = (onLeaveToday ?? []) as unknown as OnLeaveToday[];
   const dutyToday = (onDutyToday ?? []) as unknown as OnDutyToday[];
+  const absentTodayRows = (absentToday ?? []) as unknown as AbsentToday[];
 
   const birthdaysThisWeek = ((birthdayProfiles ?? []) as unknown as BirthdayProfile[])
     .map((p) => ({ ...p, ...nextBirthdayWithin(p.birthday, 7) }))
@@ -94,7 +105,11 @@ export default async function AdminHomePage({
     day: "numeric",
   });
 
-  const hasTodayInfo = leaveToday.length > 0 || dutyToday.length > 0 || birthdaysThisWeek.length > 0;
+  const hasTodayInfo =
+    leaveToday.length > 0 ||
+    dutyToday.length > 0 ||
+    absentTodayRows.length > 0 ||
+    birthdaysThisWeek.length > 0;
 
   return (
     <div>
@@ -122,6 +137,13 @@ export default async function AdminHomePage({
                 🕖{" "}
                 <span className="font-medium">{r.profile ? displayName(r.profile) : "—"}</span>{" "}
                 is on {r.shift_type?.name}
+              </p>
+            ))}
+            {absentTodayRows.map((a) => (
+              <p key={a.id}>
+                🚫{" "}
+                <span className="font-medium">{a.profile ? displayName(a.profile) : "—"}</span>{" "}
+                is absent (unauthorized)
               </p>
             ))}
             {birthdaysThisWeek.map((p) => (
