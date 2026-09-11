@@ -4,28 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { withSuccess, withError } from "@/lib/flash";
-import { resolveWeekStart } from "@/lib/calendar-utils";
-
-function eachDateISO(startDate: string, endDate: string): string[] {
-  const start = new Date(startDate + "T00:00:00");
-  const end = new Date(endDate + "T00:00:00");
-  const dates: string[] = [];
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
-    return dates;
-  }
-
-  const cursor = new Date(start);
-  while (cursor <= end) {
-    dates.push(
-      `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(
-        cursor.getDate(),
-      ).padStart(2, "0")}`,
-    );
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return dates;
-}
+import { eachDateISO, resolveWeekStart } from "@/lib/calendar-utils";
 
 export async function assignSchedule(formData: FormData) {
   const { supabase, adminId } = await requireAdmin();

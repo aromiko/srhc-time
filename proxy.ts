@@ -2,6 +2,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function proxy(request: NextRequest) {
+  // No-login public calendar link - its own token check happens in the page
+  // itself, not here. Never touch the auth/session logic below for this path.
+  if (request.nextUrl.pathname.startsWith("/public/")) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

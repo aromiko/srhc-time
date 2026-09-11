@@ -20,9 +20,16 @@ export default function Loading() {
   return (
     <div className="space-y-10">
       <section>
-        <Skeleton className="h-6 w-16" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-8 w-36" />
+        </div>
         <div className="mt-3">
           <CalendarBlock />
+        </div>
+        <div className="mt-4 space-y-2">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-10 w-full" />
         </div>
       </section>
       <section>

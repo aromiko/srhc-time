@@ -50,3 +50,18 @@ export function nextBirthdayWithin(
   const diffDays = Math.round((occurrence.getTime() - today.getTime()) / 86_400_000);
   return { withinRange: diffDays < days, nextOccurrence: occurrence };
 }
+
+/**
+ * Short category labels for the Leave calendar's group headers (mirrors the
+ * shift-type headers on the Schedule calendar). Falls back to the full name
+ * for any future leave type that isn't in this list yet.
+ */
+const LEAVE_TYPE_ABBR: Record<string, string> = {
+  Vacation: "VL",
+  Sick: "SL",
+  Offset: "OL",
+};
+
+export function leaveTypeAbbr(name: string): string {
+  return LEAVE_TYPE_ABBR[name] ?? name.toUpperCase();
+}

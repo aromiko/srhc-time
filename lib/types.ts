@@ -15,6 +15,7 @@ export type Profile = {
 export type LeaveType = {
   id: string;
   name: string;
+  sort_order: number;
   is_active: boolean;
 };
 
@@ -58,5 +59,14 @@ export type Schedule = {
   date: string;
   notes: string | null;
   assigned_by: string | null;
+  created_at: string;
+};
+
+export type Absence = {
+  id: string;
+  user_id: string;
+  date: string;
+  reason: string | null;
+  recorded_by: string | null;
   created_at: string;
 };
