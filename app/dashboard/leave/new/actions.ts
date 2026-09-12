@@ -3,8 +3,9 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { countWeekdays } from "@/lib/leave-utils";
-import { withSuccess } from "@/lib/flash";
+import { validateLeaveDateRange } from "@/lib/leave-utils";
+import { getRemainingBalance } from "@/lib/leave-requests";
+import { withSuccess, withError } from "@/lib/flash";
 
 export async function submitLeaveRequest(formData: FormData) {
   const supabase = await createClient();
@@ -19,12 +20,23 @@ export async function submitLeaveRequest(formData: FormData) {
   const endDate = String(formData.get("end_date") ?? "");
   const reason = String(formData.get("reason") ?? "").trim();
 
-  const daysRequested = countWeekdays(startDate, endDate);
+  if (!leaveTypeId) {
+    redirect(withError("/dashboard/leave/new", "Please choose a leave type."));
+  }
 
-  if (!leaveTypeId || !startDate || !endDate || daysRequested <= 0) {
+  const range = validateLeaveDateRange(startDate, endDate);
+  if (!range.ok) {
+    redirect(withError("/dashboard/leave/new", range.error));
+  }
+  const daysRequested = range.daysRequested;
+
+  const remaining = await getRemainingBalance(supabase, user.id, leaveTypeId);
+  if (daysRequested > remaining) {
     redirect(
-      "/dashboard/leave/new?error=" +
-        encodeURIComponent("Please provide a valid leave type and date range."),
+      withError(
+        "/dashboard/leave/new",
+        `You only have ${remaining} day${remaining === 1 ? "" : "s"} remaining for this leave type - this request needs ${daysRequested}.`,
+      ),
     );
   }
 
@@ -39,7 +51,7 @@ export async function submitLeaveRequest(formData: FormData) {
   });
 
   if (error) {
-    redirect("/dashboard/leave/new?error=" + encodeURIComponent(error.message));
+    redirect(withError("/dashboard/leave/new", error.message));
   }
 
   revalidatePath("/dashboard");

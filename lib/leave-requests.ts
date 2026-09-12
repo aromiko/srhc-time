@@ -1,6 +1,22 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LeaveStatus } from "@/lib/types";
 
+/** allocated_days - used_days for one employee/leave type, 0 if no balance row exists yet. */
+export async function getRemainingBalance(
+  supabase: SupabaseClient,
+  userId: string,
+  leaveTypeId: string,
+): Promise<number> {
+  const { data } = await supabase
+    .from("leave_balances")
+    .select("allocated_days, used_days")
+    .eq("user_id", userId)
+    .eq("leave_type_id", leaveTypeId)
+    .maybeSingle();
+
+  return (data?.allocated_days ?? 0) - (data?.used_days ?? 0);
+}
+
 /**
  * Transitions a leave request to a new status and keeps leave_balances.used_days
  * in sync. Only entering/leaving 'approved' moves the balance, so this is safe

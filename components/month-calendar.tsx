@@ -104,11 +104,13 @@ export function MonthCalendar({
               {withGroupHeaders(dayEvents).map(({ event: e, showHeader }) => (
                 <div key={e.id}>
                   {showHeader && (
-                    <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                    <p className="text-xs font-bold tracking-wide text-slate-500 uppercase">
                       {e.groupLabel}
                     </p>
                   )}
-                  <p className={`rounded px-2 py-1 text-sm ${e.className}`}>{e.label}</p>
+                  <p className={`rounded px-2 py-1 text-sm font-medium ${e.className}`}>
+                    {e.label}
+                  </p>
                 </div>
               ))}
             </div>
@@ -132,7 +134,7 @@ export function MonthCalendar({
               <div
                 key={day.iso}
                 className={`min-h-24 border-b border-r border-slate-100 p-1.5 last:border-r-0 ${
-                  day.inMonth ? "bg-white" : "bg-slate-50"
+                  day.isToday ? "bg-brand-50" : day.inMonth ? "bg-white" : "bg-slate-50"
                 }`}
               >
                 <p
@@ -150,13 +152,13 @@ export function MonthCalendar({
                   {withGroupHeaders(dayEvents.slice(0, 4)).map(({ event: e, showHeader }) => (
                     <div key={e.id}>
                       {showHeader && (
-                        <p className="mt-1 text-[8px] font-semibold tracking-wide text-slate-400 uppercase first:mt-0">
+                        <p className="mt-1 text-[9px] font-bold tracking-wide text-slate-500 uppercase first:mt-0">
                           {e.groupLabel}
                         </p>
                       )}
                       <p
                         title={e.label}
-                        className={`truncate rounded px-1 py-0.5 text-[10px] leading-tight ${e.className}`}
+                        className={`truncate rounded px-1 py-0.5 text-[11px] leading-tight font-medium ${e.className}`}
                       >
                         {e.label}
                       </p>

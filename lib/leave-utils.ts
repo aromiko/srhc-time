@@ -20,6 +20,39 @@ export function countWeekdays(startDate: string, endDate: string): number {
   return count;
 }
 
+/**
+ * Validates a leave date range and reports *specifically* what's wrong,
+ * rather than one generic "invalid" message for every possible failure -
+ * e.g. a swapped/backwards range (end before start) is a genuinely easy
+ * mistake to make in two separate date pickers, and deserves a clear answer
+ * instead of leaving the user to guess.
+ */
+export function validateLeaveDateRange(
+  startDate: string,
+  endDate: string,
+): { ok: false; error: string } | { ok: true; daysRequested: number } {
+  if (!startDate || !endDate) {
+    return { ok: false, error: "Please choose a start and end date." };
+  }
+
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T00:00:00");
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return { ok: false, error: "Please choose valid dates." };
+  }
+  if (end < start) {
+    return { ok: false, error: "End date must be on or after the start date." };
+  }
+
+  const daysRequested = countWeekdays(startDate, endDate);
+  if (daysRequested <= 0) {
+    return { ok: false, error: "That date range doesn't include any weekdays (Mon-Fri)." };
+  }
+
+  return { ok: true, daysRequested };
+}
+
 export function formatDate(isoDate: string): string {
   return new Date(isoDate + "T00:00:00").toLocaleDateString("en-US", {
     year: "numeric",

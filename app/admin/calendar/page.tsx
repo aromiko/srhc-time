@@ -185,14 +185,22 @@ export default async function AdminCalendarPage({
   return (
     <div className="space-y-10">
       <section id="leave">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-lg font-semibold text-slate-900">Leave and Absences</h1>
-          <Link
-            href="/admin/absence/new"
-            className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
-          >
-            + Record Absence
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/admin/leave/new"
+              className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
+            >
+              + File Leave
+            </Link>
+            <Link
+              href="/admin/absence/new"
+              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              + Record Absence
+            </Link>
+          </div>
         </div>
         <div className="mt-3">
           <LeaveCalendar year={year} month={month} events={leaveEvents} basePath={BASE_PATH} />

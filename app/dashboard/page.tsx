@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { StatusBadge } from "@/components/status-badge";
 import { ResponsiveTable, type Column } from "@/components/responsive-table";
+import { SubmitButton } from "@/components/submit-button";
 import { formatDate } from "@/lib/leave-utils";
+import { cancelLeaveRequest } from "./leave/actions";
 
 type BalanceRow = {
   id: string;
@@ -25,15 +27,33 @@ type RequestRow = {
 };
 
 const balanceColumns: Column<BalanceRow>[] = [
-  { key: "type", header: "Leave Type", cell: (b) => b.leave_type?.name },
-  { key: "allocated", header: "Allocated", align: "right", cell: (b) => b.allocated_days },
-  { key: "used", header: "Used", align: "right", cell: (b) => b.used_days },
+  {
+    key: "type",
+    header: "Leave Type",
+    cell: (b) => <span className="font-medium text-slate-800">{b.leave_type?.name}</span>,
+  },
+  {
+    key: "allocated",
+    header: "Allocated",
+    align: "right",
+    cell: (b) => <span className="text-slate-500">{b.allocated_days}</span>,
+  },
+  {
+    key: "used",
+    header: "Used",
+    align: "right",
+    cell: (b) => <span className="text-slate-500">{b.used_days}</span>,
+  },
   {
     key: "remaining",
     header: "Remaining",
     align: "right",
+    // The number employees actually care about at a glance - stands out
+    // clearly from Allocated/Used instead of matching their weight.
     cell: (b) => (
-      <span className="font-medium text-slate-900">{b.allocated_days - b.used_days}</span>
+      <span className="text-base font-bold text-brand-700">
+        {b.allocated_days - b.used_days}
+      </span>
     ),
   },
 ];
@@ -52,6 +72,33 @@ const requestColumns: Column<RequestRow>[] = [
     header: "Notes",
     cell: (r) => r.admin_notes ?? "—",
     hideOnMobile: true,
+  },
+  {
+    key: "actions",
+    header: "",
+    align: "right",
+    cell: (r) =>
+      r.status === "pending" ? (
+        <div className="flex items-center justify-end gap-3">
+          <Link
+            href={`/dashboard/leave/${r.id}/edit`}
+            className="text-sm font-medium text-brand-700 hover:text-brand-800"
+          >
+            Edit
+          </Link>
+          <form action={cancelLeaveRequest}>
+            <input type="hidden" name="id" value={r.id} />
+            <SubmitButton
+              pendingText="Cancelling…"
+              className="text-sm font-medium text-red-600 hover:text-red-800"
+            >
+              Cancel
+            </SubmitButton>
+          </form>
+        </div>
+      ) : (
+        <span className="text-slate-300">—</span>
+      ),
   },
 ];
 
