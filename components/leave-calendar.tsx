@@ -36,7 +36,7 @@ const legend = (
       Pending
     </span>
     <span className="flex items-center gap-1">
-      <span className="h-2.5 w-2.5 rounded bg-red-200" /> Absent (unauthorized)
+      <span className="h-2.5 w-2.5 rounded bg-red-200" /> Absent
     </span>
   </>
 );

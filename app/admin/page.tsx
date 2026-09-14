@@ -143,7 +143,7 @@ export default async function AdminHomePage({
               <p key={a.id}>
                 🚫{" "}
                 <span className="font-medium">{a.profile ? displayName(a.profile) : "—"}</span>{" "}
-                is absent (unauthorized)
+                is absent
               </p>
             ))}
             {birthdaysThisWeek.map((p) => (

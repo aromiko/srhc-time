@@ -82,11 +82,13 @@ export function WeekCalendar({
                 {withGroupHeaders(dayEvents).map(({ event: e, showHeader }) => (
                   <div key={e.id}>
                     {showHeader && (
-                      <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                      <p className="text-xs font-bold tracking-wide text-slate-500 uppercase">
                         {e.groupLabel}
                       </p>
                     )}
-                    <p className={`rounded px-2 py-1 text-sm ${e.className}`}>{e.label}</p>
+                    <p className={`rounded px-2 py-1 text-sm font-medium ${e.className}`}>
+                      {e.label}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -118,12 +120,12 @@ export function WeekCalendar({
                   {withGroupHeaders(dayEvents).map(({ event: e, showHeader }) => (
                     <div key={e.id}>
                       {showHeader && (
-                        <p className="mt-1.5 text-[9px] font-semibold tracking-wide text-slate-400 uppercase first:mt-0">
+                        <p className="mt-1.5 text-[9px] font-bold tracking-wide text-slate-500 uppercase first:mt-0">
                           {e.groupLabel}
                         </p>
                       )}
                       <p
-                        className={`rounded px-1.5 py-0.5 text-[11px] leading-tight wrap-break-word ${e.className}`}
+                        className={`rounded px-1.5 py-0.5 text-[11px] leading-tight font-medium wrap-break-word ${e.className}`}
                       >
                         {e.label}
                       </p>
