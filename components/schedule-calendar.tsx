@@ -19,6 +19,8 @@ export type ScheduleEvent = {
   sortOrder?: number;
   /** schedules.notes - shown inline beside the name, e.g. "Dolor — DOH seminar". */
   note?: string | null;
+  /** Set for admin calendar events (convention, holiday…) - these can span several days. */
+  event?: { endDate: string };
 };
 
 export function ScheduleCalendar({
@@ -39,9 +41,9 @@ export function ScheduleCalendar({
     .map((e) => ({
       id: e.id,
       start_date: e.date,
-      end_date: e.date,
+      end_date: e.event?.endDate ?? e.date,
       label: e.note ? `${e.label} — ${e.note}` : e.label,
-      className: SHIFT_PILL_CLASSES[e.color],
+      className: e.event ? "bg-slate-700 text-white" : SHIFT_PILL_CLASSES[e.color],
       groupLabel: e.groupLabel,
     }));
 
@@ -53,6 +55,10 @@ export function ScheduleCalendar({
           {s.name}
         </span>
       ))}
+      <span className="flex items-center gap-1">
+        <span className="h-2.5 w-2.5 rounded bg-slate-700" />
+        Event
+      </span>
     </>
   );
 

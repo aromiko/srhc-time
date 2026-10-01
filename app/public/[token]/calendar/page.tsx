@@ -44,7 +44,7 @@ type ScheduleRow = {
 const ABSENCE_GROUP_LABEL = "ABSENCES";
 const ABSENCE_SORT_ORDER = 999;
 const EVENT_GROUP_LABEL = "EVENTS";
-// Negative so events sort ahead of every leave type and absences.
+// Negative so events sort ahead of every shift type.
 const EVENT_SORT_ORDER = -1;
 
 export default async function PublicCalendarPage({
@@ -79,9 +79,9 @@ export default async function PublicCalendarPage({
   const [
     { data: leaveRequests },
     { data: absences },
-    { data: calendarEvents },
     { data: schedules },
     { data: shiftTypes },
+    { data: calendarEvents },
   ] = await Promise.all([
     admin
       .from("leave_requests")
@@ -99,12 +99,6 @@ export default async function PublicCalendarPage({
       .gte("date", monthStartISO)
       .lte("date", monthEndISO),
     admin
-      .from("calendar_events")
-      .select("id, title, start_date, end_date")
-      .lte("start_date", monthEndISO)
-      .gte("end_date", monthStartISO)
-      .order("start_date"),
-    admin
       .from("schedules")
       .select(
         "id, date, notes, " +
@@ -115,19 +109,15 @@ export default async function PublicCalendarPage({
       .lte("date", weekEndISO)
       .order("date"),
     admin.from("shift_types").select("name, color").eq("is_active", true).order("sort_order"),
+    admin
+      .from("calendar_events")
+      .select("id, title, start_date, end_date")
+      .lte("start_date", weekEndISO)
+      .gte("end_date", weekStartISO)
+      .order("start_date"),
   ]);
 
   const leaveEvents: CalendarEvent[] = [
-    ...((calendarEvents ?? []) as unknown as EventRow[]).map((e) => ({
-      id: e.id,
-      start_date: e.start_date,
-      end_date: e.end_date,
-      status: "event" as const,
-      mine: false,
-      label: e.title,
-      groupLabel: EVENT_GROUP_LABEL,
-      sortOrder: EVENT_SORT_ORDER,
-    })),
     ...((leaveRequests ?? []) as unknown as LeaveRow[]).map((r) => ({
       id: r.id,
       start_date: r.start_date,
@@ -150,8 +140,17 @@ export default async function PublicCalendarPage({
     })),
   ];
 
-  const scheduleEvents: ScheduleEvent[] = ((schedules ?? []) as unknown as ScheduleRow[]).map(
-    (r) => ({
+  const scheduleEvents: ScheduleEvent[] = [
+    ...((calendarEvents ?? []) as unknown as EventRow[]).map((e) => ({
+      id: e.id,
+      date: e.start_date,
+      color: "blue" as const,
+      label: e.title,
+      groupLabel: EVENT_GROUP_LABEL,
+      sortOrder: EVENT_SORT_ORDER,
+      event: { endDate: e.end_date },
+    })),
+    ...((schedules ?? []) as unknown as ScheduleRow[]).map((r) => ({
       id: r.id,
       date: r.date,
       color: r.shift_type?.color ?? "blue",
@@ -159,8 +158,8 @@ export default async function PublicCalendarPage({
       groupLabel: r.shift_type?.name ?? "",
       sortOrder: r.shift_type?.sort_order ?? 999,
       note: r.notes,
-    }),
-  );
+    })),
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -181,7 +180,7 @@ export default async function PublicCalendarPage({
 
       <main className="mx-auto w-full max-w-5xl space-y-10 px-4 py-8">
         <section>
-          <h1 className="text-lg font-semibold text-slate-900">Leave, Absences and Events</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Leave and Absences</h1>
           <div className="mt-3">
             <LeaveCalendar year={year} month={month} events={leaveEvents} basePath={basePath} />
           </div>

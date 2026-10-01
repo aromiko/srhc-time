@@ -57,7 +57,7 @@ const BASE_PATH = "/admin/calendar";
 const ABSENCE_GROUP_LABEL = "ABSENCES";
 const ABSENCE_SORT_ORDER = 999;
 const EVENT_GROUP_LABEL = "EVENTS";
-// Negative so events sort ahead of every leave type and absences.
+// Negative so events sort ahead of every shift type.
 const EVENT_SORT_ORDER = -1;
 
 export default async function AdminCalendarPage({
@@ -89,9 +89,9 @@ export default async function AdminCalendarPage({
   const [
     { data: leaveRequests, error: leaveError },
     { data: absences, error: absenceError },
-    { data: calendarEvents, error: eventError },
     { data: shiftTypes },
     { data: schedules, error: scheduleError },
+    { data: calendarEvents, error: eventError },
   ] = await Promise.all([
     supabase
       .from("leave_requests")
@@ -112,12 +112,6 @@ export default async function AdminCalendarPage({
       .lte("date", monthEndISO)
       .order("date"),
     supabase
-      .from("calendar_events")
-      .select("id, title, start_date, end_date")
-      .lte("start_date", monthEndISO)
-      .gte("end_date", monthStartISO)
-      .order("start_date"),
-    supabase
       .from("shift_types")
       .select("id, name, color, sort_order")
       .eq("is_active", true)
@@ -132,6 +126,12 @@ export default async function AdminCalendarPage({
       .gte("date", weekStartISO)
       .lte("date", weekEndISO)
       .order("date"),
+    supabase
+      .from("calendar_events")
+      .select("id, title, start_date, end_date")
+      .lte("start_date", weekEndISO)
+      .gte("end_date", weekStartISO)
+      .order("start_date"),
   ]);
 
   if (leaveError) console.error("Failed to load calendar leave requests:", leaveError);
@@ -139,20 +139,9 @@ export default async function AdminCalendarPage({
   if (eventError) console.error("Failed to load calendar events:", eventError);
   if (scheduleError) console.error("Failed to load calendar schedules:", scheduleError);
 
-  const eventRows = (calendarEvents ?? []) as unknown as EventRow[];
   const absenceRows = (absences ?? []) as unknown as AbsenceRow[];
 
   const leaveEvents: CalendarEvent[] = [
-    ...((calendarEvents ?? []) as unknown as EventRow[]).map((e) => ({
-      id: e.id,
-      start_date: e.start_date,
-      end_date: e.end_date,
-      status: "event" as const,
-      mine: false,
-      label: e.title,
-      groupLabel: EVENT_GROUP_LABEL,
-      sortOrder: EVENT_SORT_ORDER,
-    })),
     ...((leaveRequests ?? []) as unknown as LeaveRow[]).map((r) => ({
       id: r.id,
       start_date: r.start_date,
@@ -175,17 +164,29 @@ export default async function AdminCalendarPage({
     })),
   ];
 
+  const eventRows = (calendarEvents ?? []) as unknown as EventRow[];
   const scheduleRows = (schedules ?? []) as unknown as ScheduleRow[];
-  const scheduleEvents: ScheduleEvent[] = scheduleRows.map((r) => ({
-    id: r.id,
-    date: r.date,
-    color: r.shift_type?.color ?? "blue",
-    // Just the name - the shift type is already the group header above it.
-    label: r.profile ? displayName(r.profile) : "—",
-    groupLabel: r.shift_type?.name ?? "",
-    sortOrder: r.shift_type?.sort_order ?? 999,
-    note: r.notes,
-  }));
+  const scheduleEvents: ScheduleEvent[] = [
+    ...((calendarEvents ?? []) as unknown as EventRow[]).map((e) => ({
+      id: e.id,
+      date: e.start_date,
+      color: "blue" as const,
+      label: e.title,
+      groupLabel: EVENT_GROUP_LABEL,
+      sortOrder: EVENT_SORT_ORDER,
+      event: { endDate: e.end_date },
+    })),
+    ...scheduleRows.map((r) => ({
+      id: r.id,
+      date: r.date,
+      color: r.shift_type?.color ?? "blue",
+      // Just the name - the shift type is already the group header above it.
+      label: r.profile ? displayName(r.profile) : "—",
+      groupLabel: r.shift_type?.name ?? "",
+      sortOrder: r.shift_type?.sort_order ?? 999,
+      note: r.notes,
+    })),
+  ];
 
   const filteredRows = search
     ? scheduleRows.filter((r) => {
@@ -216,7 +217,7 @@ export default async function AdminCalendarPage({
     <div className="space-y-10">
       <section id="leave">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-lg font-semibold text-slate-900">Leave, Absences and Events</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Leave and Absences</h1>
           <div className="flex gap-2">
             <Link
               href="/admin/leave/new"
@@ -230,61 +231,10 @@ export default async function AdminCalendarPage({
             >
               + Record Absence
             </Link>
-            <Link
-              href="/admin/event/new"
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-            >
-              + Add Event
-            </Link>
           </div>
         </div>
         <div className="mt-3">
           <LeaveCalendar year={year} month={month} events={leaveEvents} basePath={BASE_PATH} />
-        </div>
-
-        <div className="mt-4">
-          <h3 className="text-sm font-medium text-slate-700">This Month&apos;s Events</h3>
-          {eventRows.length === 0 ? (
-            <p className="mt-2 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-400">
-              No events this month.
-            </p>
-          ) : (
-            <div className="mt-2 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white">
-              {eventRows.map((e) => (
-                <form key={e.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
-                  <input type="hidden" name="id" value={e.id} />
-                  <input type="hidden" name="redirect_to" value={absenceRedirectTo} />
-                  <span className="w-28 text-xs text-slate-500">
-                    {e.start_date === e.end_date
-                      ? formatDate(e.start_date)
-                      : `${formatDate(e.start_date)} – ${formatDate(e.end_date)}`}
-                  </span>
-                  <input
-                    type="text"
-                    name="title"
-                    aria-label="Title"
-                    required
-                    defaultValue={e.title}
-                    className="min-w-40 flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
-                  />
-                  <SubmitButton
-                    formAction={updateCalendarEvent}
-                    pendingText="Saving…"
-                    className="rounded-md bg-slate-800 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-700"
-                  >
-                    Save
-                  </SubmitButton>
-                  <SubmitButton
-                    formAction={deleteCalendarEvent}
-                    pendingText="Removing…"
-                    className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
-                  >
-                    Remove
-                  </SubmitButton>
-                </form>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="mt-4">
@@ -335,12 +285,20 @@ export default async function AdminCalendarPage({
       <section id="schedule">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">Schedule</h2>
-          <Link
-            href="/admin/schedule/new"
-            className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
-          >
-            + Assign Schedule
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/admin/schedule/new"
+              className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
+            >
+              + Assign Schedule
+            </Link>
+            <Link
+              href="/admin/event/new"
+              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              + Add Event
+            </Link>
+          </div>
         </div>
 
         {error && (
@@ -354,6 +312,55 @@ export default async function AdminCalendarPage({
             basePath={BASE_PATH}
             shiftLegend={shiftTypes ?? []}
           />
+        </div>
+
+        <div className="mt-4">
+          <h3 className="text-sm font-medium text-slate-700">This Week&apos;s Events</h3>
+          {eventRows.length === 0 ? (
+            <p className="mt-2 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-400">
+              No events this week.
+            </p>
+          ) : (
+            <div className="mt-2 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white">
+              {eventRows.map((e) => (
+                <form key={e.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
+                  <input type="hidden" name="id" value={e.id} />
+                  <input
+                    type="hidden"
+                    name="redirect_to"
+                    value={`/admin/calendar?w=${weekStartISO}#schedule`}
+                  />
+                  <span className="w-28 text-xs text-slate-500">
+                    {e.start_date === e.end_date
+                      ? formatDate(e.start_date)
+                      : `${formatDate(e.start_date)} – ${formatDate(e.end_date)}`}
+                  </span>
+                  <input
+                    type="text"
+                    name="title"
+                    aria-label="Title"
+                    required
+                    defaultValue={e.title}
+                    className="min-w-40 flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+                  />
+                  <SubmitButton
+                    formAction={updateCalendarEvent}
+                    pendingText="Saving…"
+                    className="rounded-md bg-slate-800 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-700"
+                  >
+                    Save
+                  </SubmitButton>
+                  <SubmitButton
+                    formAction={deleteCalendarEvent}
+                    pendingText="Removing…"
+                    className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                  >
+                    Remove
+                  </SubmitButton>
+                </form>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-4">
