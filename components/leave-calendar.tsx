@@ -4,7 +4,7 @@ export type CalendarEvent = {
   id: string;
   start_date: string;
   end_date: string;
-  status: "pending" | "approved" | "absent" | "event";
+  status: "pending" | "approved" | "absent";
   label: string;
   mine: boolean;
   /** Category header, e.g. "VL" / "SL" / "OL" / "ABSENCES" - see lib/leave-utils.ts's leaveTypeAbbr. */
@@ -14,9 +14,6 @@ export type CalendarEvent = {
 };
 
 function eventPillClasses(e: CalendarEvent) {
-  if (e.status === "event") {
-    return "bg-blue-100 text-blue-800";
-  }
   if (e.status === "absent") {
     return "bg-red-100 text-red-800";
   }
@@ -40,9 +37,6 @@ const legend = (
     </span>
     <span className="flex items-center gap-1">
       <span className="h-2.5 w-2.5 rounded bg-red-200" /> Absent
-    </span>
-    <span className="flex items-center gap-1">
-      <span className="h-2.5 w-2.5 rounded bg-blue-200" /> Event
     </span>
   </>
 );
@@ -79,7 +73,7 @@ export function LeaveCalendar({
       basePath={basePath}
       extraQuery={extraQuery}
       legend={legend}
-      emptyAgendaMessage="No leave, absences, or events this month."
+      emptyAgendaMessage="No leave or absences this month."
     />
   );
 }
