@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getMonthRange, resolveWeekStart, resolveYearMonth, addDaysISO } from "@/lib/calendar-utils";
+import {
+  getMonthRange,
+  resolveWeekStart,
+  resolveYearMonth,
+  addDaysISO,
+} from "@/lib/calendar-utils";
 import { LeaveCalendar, type CalendarEvent } from "@/components/leave-calendar";
 import { ScheduleCalendar, type ScheduleEvent } from "@/components/schedule-calendar";
 import { displayName } from "@/lib/profile-utils";
@@ -21,6 +26,13 @@ type AbsenceRow = {
   profile: { full_name: string; nickname: string | null } | null;
 };
 
+type EventRow = {
+  id: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+};
+
 type ScheduleRow = {
   id: string;
   date: string;
@@ -31,6 +43,9 @@ type ScheduleRow = {
 
 const ABSENCE_GROUP_LABEL = "ABSENCES";
 const ABSENCE_SORT_ORDER = 999;
+const EVENT_GROUP_LABEL = "EVENTS";
+// Negative so events sort ahead of every leave type and absences.
+const EVENT_SORT_ORDER = -1;
 
 export default async function PublicCalendarPage({
   params,
@@ -61,43 +76,58 @@ export default async function PublicCalendarPage({
   // client and key never reach the browser; only the rendered HTML does.
   const admin = createAdminClient();
 
-  const [{ data: leaveRequests }, { data: absences }, { data: schedules }, { data: shiftTypes }] =
-    await Promise.all([
-      admin
-        .from("leave_requests")
-        .select(
-          "id, start_date, end_date, " +
-            "profile:profiles!leave_requests_user_id_fkey(full_name, nickname), " +
-            "leave_type:leave_types(name, sort_order)",
-        )
-        .eq("status", "approved")
-        .lte("start_date", monthEndISO)
-        .gte("end_date", monthStartISO),
-      admin
-        .from("absences")
-        .select(
-          "id, date, profile:profiles!absences_user_id_fkey(full_name, nickname)",
-        )
-        .gte("date", monthStartISO)
-        .lte("date", monthEndISO),
-      admin
-        .from("schedules")
-        .select(
-          "id, date, notes, " +
-            "profile:profiles!schedules_user_id_fkey(full_name, nickname), " +
-            "shift_type:shift_types(name, color, sort_order)",
-        )
-        .gte("date", weekStartISO)
-        .lte("date", weekEndISO)
-        .order("date"),
-      admin
-        .from("shift_types")
-        .select("name, color")
-        .eq("is_active", true)
-        .order("sort_order"),
-    ]);
+  const [
+    { data: leaveRequests },
+    { data: absences },
+    { data: calendarEvents },
+    { data: schedules },
+    { data: shiftTypes },
+  ] = await Promise.all([
+    admin
+      .from("leave_requests")
+      .select(
+        "id, start_date, end_date, " +
+          "profile:profiles!leave_requests_user_id_fkey(full_name, nickname), " +
+          "leave_type:leave_types(name, sort_order)",
+      )
+      .eq("status", "approved")
+      .lte("start_date", monthEndISO)
+      .gte("end_date", monthStartISO),
+    admin
+      .from("absences")
+      .select("id, date, profile:profiles!absences_user_id_fkey(full_name, nickname)")
+      .gte("date", monthStartISO)
+      .lte("date", monthEndISO),
+    admin
+      .from("calendar_events")
+      .select("id, title, start_date, end_date")
+      .lte("start_date", monthEndISO)
+      .gte("end_date", monthStartISO)
+      .order("start_date"),
+    admin
+      .from("schedules")
+      .select(
+        "id, date, notes, " +
+          "profile:profiles!schedules_user_id_fkey(full_name, nickname), " +
+          "shift_type:shift_types(name, color, sort_order)",
+      )
+      .gte("date", weekStartISO)
+      .lte("date", weekEndISO)
+      .order("date"),
+    admin.from("shift_types").select("name, color").eq("is_active", true).order("sort_order"),
+  ]);
 
   const leaveEvents: CalendarEvent[] = [
+    ...((calendarEvents ?? []) as unknown as EventRow[]).map((e) => ({
+      id: e.id,
+      start_date: e.start_date,
+      end_date: e.end_date,
+      status: "event" as const,
+      mine: false,
+      label: e.title,
+      groupLabel: EVENT_GROUP_LABEL,
+      sortOrder: EVENT_SORT_ORDER,
+    })),
     ...((leaveRequests ?? []) as unknown as LeaveRow[]).map((r) => ({
       id: r.id,
       start_date: r.start_date,
@@ -151,7 +181,7 @@ export default async function PublicCalendarPage({
 
       <main className="mx-auto w-full max-w-5xl space-y-10 px-4 py-8">
         <section>
-          <h1 className="text-lg font-semibold text-slate-900">Leave and Absences</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Leave, Absences and Events</h1>
           <div className="mt-3">
             <LeaveCalendar year={year} month={month} events={leaveEvents} basePath={basePath} />
           </div>

@@ -12,6 +12,7 @@ import { LeaveCalendar, type CalendarEvent } from "@/components/leave-calendar";
 import { ScheduleCalendar, type ScheduleEvent } from "@/components/schedule-calendar";
 import { SubmitButton } from "@/components/submit-button";
 import { updateSchedule, deleteSchedule } from "@/app/admin/schedule/actions";
+import { updateCalendarEvent, deleteCalendarEvent } from "@/app/admin/event/actions";
 import { updateAbsence, deleteAbsence } from "@/app/admin/absence/actions";
 import { displayName } from "@/lib/profile-utils";
 import { formatDate, leaveTypeAbbr } from "@/lib/leave-utils";
@@ -35,6 +36,13 @@ type AbsenceRow = {
   profile: { full_name: string; nickname: string | null } | null;
 };
 
+type EventRow = {
+  id: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+};
+
 type ScheduleRow = {
   id: string;
   date: string;
@@ -48,6 +56,9 @@ type ScheduleRow = {
 const BASE_PATH = "/admin/calendar";
 const ABSENCE_GROUP_LABEL = "ABSENCES";
 const ABSENCE_SORT_ORDER = 999;
+const EVENT_GROUP_LABEL = "EVENTS";
+// Negative so events sort ahead of every leave type and absences.
+const EVENT_SORT_ORDER = -1;
 
 export default async function AdminCalendarPage({
   searchParams,
@@ -78,6 +89,7 @@ export default async function AdminCalendarPage({
   const [
     { data: leaveRequests, error: leaveError },
     { data: absences, error: absenceError },
+    { data: calendarEvents, error: eventError },
     { data: shiftTypes },
     { data: schedules, error: scheduleError },
   ] = await Promise.all([
@@ -100,6 +112,12 @@ export default async function AdminCalendarPage({
       .lte("date", monthEndISO)
       .order("date"),
     supabase
+      .from("calendar_events")
+      .select("id, title, start_date, end_date")
+      .lte("start_date", monthEndISO)
+      .gte("end_date", monthStartISO)
+      .order("start_date"),
+    supabase
       .from("shift_types")
       .select("id, name, color, sort_order")
       .eq("is_active", true)
@@ -118,11 +136,23 @@ export default async function AdminCalendarPage({
 
   if (leaveError) console.error("Failed to load calendar leave requests:", leaveError);
   if (absenceError) console.error("Failed to load calendar absences:", absenceError);
+  if (eventError) console.error("Failed to load calendar events:", eventError);
   if (scheduleError) console.error("Failed to load calendar schedules:", scheduleError);
 
+  const eventRows = (calendarEvents ?? []) as unknown as EventRow[];
   const absenceRows = (absences ?? []) as unknown as AbsenceRow[];
 
   const leaveEvents: CalendarEvent[] = [
+    ...((calendarEvents ?? []) as unknown as EventRow[]).map((e) => ({
+      id: e.id,
+      start_date: e.start_date,
+      end_date: e.end_date,
+      status: "event" as const,
+      mine: false,
+      label: e.title,
+      groupLabel: EVENT_GROUP_LABEL,
+      sortOrder: EVENT_SORT_ORDER,
+    })),
     ...((leaveRequests ?? []) as unknown as LeaveRow[]).map((r) => ({
       id: r.id,
       start_date: r.start_date,
@@ -186,7 +216,7 @@ export default async function AdminCalendarPage({
     <div className="space-y-10">
       <section id="leave">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-lg font-semibold text-slate-900">Leave and Absences</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Leave, Absences and Events</h1>
           <div className="flex gap-2">
             <Link
               href="/admin/leave/new"
@@ -200,10 +230,61 @@ export default async function AdminCalendarPage({
             >
               + Record Absence
             </Link>
+            <Link
+              href="/admin/event/new"
+              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              + Add Event
+            </Link>
           </div>
         </div>
         <div className="mt-3">
           <LeaveCalendar year={year} month={month} events={leaveEvents} basePath={BASE_PATH} />
+        </div>
+
+        <div className="mt-4">
+          <h3 className="text-sm font-medium text-slate-700">This Month&apos;s Events</h3>
+          {eventRows.length === 0 ? (
+            <p className="mt-2 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-400">
+              No events this month.
+            </p>
+          ) : (
+            <div className="mt-2 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white">
+              {eventRows.map((e) => (
+                <form key={e.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
+                  <input type="hidden" name="id" value={e.id} />
+                  <input type="hidden" name="redirect_to" value={absenceRedirectTo} />
+                  <span className="w-28 text-xs text-slate-500">
+                    {e.start_date === e.end_date
+                      ? formatDate(e.start_date)
+                      : `${formatDate(e.start_date)} – ${formatDate(e.end_date)}`}
+                  </span>
+                  <input
+                    type="text"
+                    name="title"
+                    aria-label="Title"
+                    required
+                    defaultValue={e.title}
+                    className="min-w-40 flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+                  />
+                  <SubmitButton
+                    formAction={updateCalendarEvent}
+                    pendingText="Saving…"
+                    className="rounded-md bg-slate-800 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-700"
+                  >
+                    Save
+                  </SubmitButton>
+                  <SubmitButton
+                    formAction={deleteCalendarEvent}
+                    pendingText="Removing…"
+                    className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                  >
+                    Remove
+                  </SubmitButton>
+                </form>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-4">
@@ -338,10 +419,7 @@ export default async function AdminCalendarPage({
                   </summary>
                   <div className="divide-y divide-slate-100">
                     {rows.map((r) => (
-                      <form
-                        key={r.id}
-                        className="flex flex-wrap items-center gap-2 px-3 py-2"
-                      >
+                      <form key={r.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
                         <input type="hidden" name="id" value={r.id} />
                         <input type="hidden" name="redirect_to" value={redirectToForDate(date)} />
                         <span className="min-w-28 flex-1 text-sm font-medium text-slate-800">
