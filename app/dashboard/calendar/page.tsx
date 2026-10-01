@@ -36,6 +36,13 @@ type AbsenceRow = {
   profile: { full_name: string; nickname: string | null } | null;
 };
 
+type EventRow = {
+  id: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+};
+
 type ScheduleRow = {
   id: string;
   date: string;
@@ -46,6 +53,9 @@ type ScheduleRow = {
 const BASE_PATH = "/dashboard/calendar";
 const ABSENCE_GROUP_LABEL = "ABSENCES";
 const ABSENCE_SORT_ORDER = 999;
+const EVENT_GROUP_LABEL = "EVENTS";
+// Negative so events sort ahead of every leave type and absences.
+const EVENT_SORT_ORDER = -1;
 
 export default async function EmployeeCalendarPage({
   searchParams,
@@ -67,6 +77,7 @@ export default async function EmployeeCalendarPage({
     { data: approved },
     { data: ownPending },
     { data: absences },
+    { data: calendarEvents },
     { data: schedules },
     { data: shiftTypes },
   ] = await Promise.all([
@@ -91,11 +102,15 @@ export default async function EmployeeCalendarPage({
     // marked absent, not just the admin who recorded it.
     supabase
       .from("absences")
-      .select(
-        "id, user_id, date, profile:profiles!absences_user_id_fkey(full_name, nickname)",
-      )
+      .select("id, user_id, date, profile:profiles!absences_user_id_fkey(full_name, nickname)")
       .gte("date", startISO)
       .lte("date", endISO),
+    supabase
+      .from("calendar_events")
+      .select("id, title, start_date, end_date")
+      .lte("start_date", endISO)
+      .gte("end_date", startISO)
+      .order("start_date"),
     // RLS already restricts this to the signed-in user's own rows, but
     // filtering explicitly here too keeps the query's intent obvious.
     supabase
@@ -108,6 +123,16 @@ export default async function EmployeeCalendarPage({
   ]);
 
   const leaveEvents: CalendarEvent[] = [
+    ...((calendarEvents ?? []) as unknown as EventRow[]).map((e) => ({
+      id: e.id,
+      start_date: e.start_date,
+      end_date: e.end_date,
+      status: "event" as const,
+      mine: false,
+      label: e.title,
+      groupLabel: EVENT_GROUP_LABEL,
+      sortOrder: EVENT_SORT_ORDER,
+    })),
     ...((approved ?? []) as unknown as ApprovedRow[]).map((r) => ({
       id: r.id,
       start_date: r.start_date,
@@ -153,7 +178,7 @@ export default async function EmployeeCalendarPage({
   return (
     <div className="space-y-10">
       <section>
-        <h1 className="text-lg font-semibold text-slate-900">Leave and Absences</h1>
+        <h1 className="text-lg font-semibold text-slate-900">Leave, Absences and Events</h1>
         <div className="mt-3">
           <LeaveCalendar year={year} month={month} events={leaveEvents} basePath={BASE_PATH} />
         </div>
