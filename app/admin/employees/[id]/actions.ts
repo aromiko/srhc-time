@@ -45,8 +45,18 @@ export async function updateLeaveBalance(formData: FormData) {
   const userId = String(formData.get("user_id") ?? "");
   const leaveTypeId = String(formData.get("leave_type_id") ?? "");
   const allocatedDays = Number(formData.get("allocated_days") ?? "0");
+  // Manual override for days used outside the app (e.g. Offset taken before
+  // it was tracked here). Approving/declining requests still adjusts it.
+  const usedDays = Number(formData.get("used_days") ?? "0");
 
-  if (!userId || !leaveTypeId || Number.isNaN(allocatedDays) || allocatedDays < 0) {
+  if (
+    !userId ||
+    !leaveTypeId ||
+    !Number.isFinite(allocatedDays) ||
+    allocatedDays < 0 ||
+    !Number.isFinite(usedDays) ||
+    usedDays < 0
+  ) {
     redirect(withError(`/admin/employees/${userId}#balances`, "Invalid value."));
   }
 
@@ -57,20 +67,23 @@ export async function updateLeaveBalance(formData: FormData) {
     .eq("leave_type_id", leaveTypeId)
     .maybeSingle();
 
-  if (existing) {
-    await supabase
-      .from("leave_balances")
-      .update({ allocated_days: allocatedDays })
-      .eq("id", existing.id);
-  } else {
-    await supabase.from("leave_balances").insert({
-      user_id: userId,
-      leave_type_id: leaveTypeId,
-      allocated_days: allocatedDays,
-      used_days: 0,
-    });
+  const { error } = existing
+    ? await supabase
+        .from("leave_balances")
+        .update({ allocated_days: allocatedDays, used_days: usedDays })
+        .eq("id", existing.id)
+    : await supabase.from("leave_balances").insert({
+        user_id: userId,
+        leave_type_id: leaveTypeId,
+        allocated_days: allocatedDays,
+        used_days: usedDays,
+      });
+
+  if (error) {
+    redirect(withError(`/admin/employees/${userId}#balances`, error.message));
   }
 
   revalidatePath(`/admin/employees/${userId}`);
+  revalidatePath("/dashboard");
   redirect(withSuccess(`/admin/employees/${userId}#balances`, "Balance updated."));
 }

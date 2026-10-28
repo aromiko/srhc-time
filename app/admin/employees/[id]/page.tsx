@@ -81,24 +81,52 @@ export default async function EmployeeDetailPage({
     };
   });
 
+  const balanceInputClass =
+    "w-20 rounded-md border border-slate-300 px-2 py-1.5 text-right text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600";
+
   const balanceColumns: Column<BalanceViewRow>[] = [
     { key: "type", header: "Leave Type", cell: (b) => b.name },
-    { key: "used", header: "Used", align: "right", cell: (b) => b.used },
-    { key: "allocated", header: "Allocated", align: "right", cell: (b) => b.allocated },
     {
+      key: "remaining",
+      header: "Remaining",
+      align: "right",
+      cell: (b) => <span className="font-semibold">{b.allocated - b.used}</span>,
+    },
+    {
+      // Used is editable too, for days taken outside the app (e.g. Offset used
+      // before it was tracked here). Both inputs live in one cell because
+      // ResponsiveTable renders every row twice (mobile + desktop), so a form
+      // can't be shared across cells by id.
       key: "action",
-      header: "",
+      header: "Used / Allocated",
+      align: "right",
       cell: (b) => (
-        <form action={updateLeaveBalance} className="flex items-center justify-end gap-2">
+        <form
+          action={updateLeaveBalance}
+          className="flex flex-wrap items-center justify-end gap-2"
+        >
           <input type="hidden" name="user_id" value={id} />
           <input type="hidden" name="leave_type_id" value={b.leaveTypeId} />
           <input
             type="number"
+            name="used_days"
+            aria-label={`${b.name} used days`}
+            title="Used"
+            min={0}
+            step={0.5}
+            defaultValue={b.used}
+            className={balanceInputClass}
+          />
+          <span className="text-slate-400">/</span>
+          <input
+            type="number"
             name="allocated_days"
+            aria-label={`${b.name} allocated days`}
+            title="Allocated"
             min={0}
             step={0.5}
             defaultValue={b.allocated}
-            className="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+            className={balanceInputClass}
           />
           <SubmitButton
             pendingText="Saving…"

@@ -158,7 +158,10 @@ export default async function AdminCalendarPage({
       end_date: a.date,
       status: "absent" as const,
       mine: a.user_id === user?.profile.id,
-      label: a.profile ? displayName(a.profile) : "—",
+      // Reason shown inline like schedule notes (e.g. "Salyn — 1/2") since
+      // absences have no type of their own. Admin calendar only - reasons can
+      // be personal, so the employee/public calendars keep just the name.
+      label: `${a.profile ? displayName(a.profile) : "—"}${a.reason ? ` — ${a.reason}` : ""}`,
       groupLabel: ABSENCE_GROUP_LABEL,
       sortOrder: ABSENCE_SORT_ORDER,
     })),
@@ -238,7 +241,7 @@ export default async function AdminCalendarPage({
         </div>
 
         <div className="mt-4">
-          <h3 className="text-sm font-medium text-slate-700">This Month&apos;s Absences</h3>
+          <h3 className="text-base font-semibold text-slate-900">This Month&apos;s Absences</h3>
           {absenceRows.length === 0 ? (
             <p className="mt-2 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-400">
               No absences recorded this month.
@@ -315,7 +318,7 @@ export default async function AdminCalendarPage({
         </div>
 
         <div className="mt-4">
-          <h3 className="text-sm font-medium text-slate-700">This Week&apos;s Events</h3>
+          <h3 className="text-base font-semibold text-slate-900">This Week&apos;s Events</h3>
           {eventRows.length === 0 ? (
             <p className="mt-2 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-400">
               No events this week.
@@ -365,7 +368,7 @@ export default async function AdminCalendarPage({
 
         <div className="mt-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-medium text-slate-700">This Week&apos;s Assignments</h3>
+            <h3 className="text-base font-semibold text-slate-900">This Week&apos;s Assignments</h3>
             <form method="get" className="flex items-center gap-2">
               <input type="hidden" name="w" value={weekStartISO} />
               <input
