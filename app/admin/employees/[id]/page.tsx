@@ -4,8 +4,9 @@ import { StatusBadge } from "@/components/status-badge";
 import { ResponsiveTable, type Column } from "@/components/responsive-table";
 import { SubmitButton } from "@/components/submit-button";
 import { BackLink } from "@/components/back-link";
-import { formatDate } from "@/lib/leave-utils";
-import type { Profile } from "@/lib/types";
+import { formatDate, formatDays } from "@/lib/leave-utils";
+import { PendingLink } from "@/components/pending-link";
+import type { HalfDayPeriod, Profile } from "@/lib/types";
 import { updateLeaveBalance, updateProfile } from "./actions";
 
 type BalanceRow = {
@@ -20,6 +21,7 @@ type RequestRow = {
   start_date: string;
   end_date: string;
   days_requested: number;
+  half_day_period: HalfDayPeriod | null;
   status: "pending" | "approved" | "declined";
   leave_type: { name: string } | null;
 };
@@ -59,7 +61,7 @@ export default async function EmployeeDetailPage({
     supabase
       .from("leave_requests")
       .select(
-        "id, start_date, end_date, days_requested, status, leave_type:leave_types(name)",
+        "id, start_date, end_date, days_requested, half_day_period, status, leave_type:leave_types(name)",
       )
       .eq("user_id", id)
       .order("created_at", { ascending: false })
@@ -146,8 +148,26 @@ export default async function EmployeeDetailPage({
       header: "Dates",
       cell: (r) => `${formatDate(r.start_date)} - ${formatDate(r.end_date)}`,
     },
-    { key: "days", header: "Days", align: "right", cell: (r) => r.days_requested },
+    {
+      key: "days",
+      header: "Days",
+      align: "right",
+      cell: (r) => formatDays(r.days_requested, r.half_day_period),
+    },
     { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
+    {
+      key: "edit",
+      header: "",
+      align: "right",
+      cell: (r) => (
+        <PendingLink
+          href={`/admin/requests/${r.id}/edit?from=employee`}
+          className="text-sm font-medium text-brand-700 hover:text-brand-800"
+        >
+          Edit
+        </PendingLink>
+      ),
+    },
   ];
 
   const p = profile as Profile;

@@ -25,7 +25,7 @@ export async function updateLeaveRequest(formData: FormData) {
   if (!id) redirect(withError("/dashboard", "That leave request no longer exists."));
   if (!leaveTypeId) redirect(withError(editPath, "Please choose a leave type."));
 
-  const range = validateLeaveDateRange(startDate, endDate);
+  const range = validateLeaveDateRange(startDate, endDate, String(formData.get("duration") ?? "full"));
   if (!range.ok) {
     redirect(withError(editPath, range.error));
   }
@@ -52,6 +52,7 @@ export async function updateLeaveRequest(formData: FormData) {
       start_date: startDate,
       end_date: endDate,
       days_requested: daysRequested,
+      half_day_period: range.halfDayPeriod,
       reason: reason || null,
     })
     .eq("id", id)

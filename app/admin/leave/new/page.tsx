@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/submit-button";
 import { BackLink } from "@/components/back-link";
+import { LeaveDurationField } from "@/components/leave-duration-field";
 import { fileLeaveOnBehalf } from "./actions";
 
 export default async function FileLeaveOnBehalfPage({
@@ -97,6 +98,8 @@ export default async function FileLeaveOnBehalfPage({
           </div>
         </div>
 
+        <LeaveDurationField />
+
         <div>
           <label htmlFor="note" className="block text-sm font-medium text-slate-700">
             Note (optional)
@@ -110,7 +113,7 @@ export default async function FileLeaveOnBehalfPage({
         </div>
 
         <p className="text-xs text-slate-400">
-          Days are counted as weekdays (Mon-Fri) between the start and end dates, inclusive -
+          Days are counted as weekdays (Mon-Fri) between the start and end dates, inclusive (or 0.5 for a half day) -
           same rule as when an employee files their own request.
         </p>
 

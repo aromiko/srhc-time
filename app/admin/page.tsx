@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatDate, nextBirthdayWithin } from "@/lib/leave-utils";
+import { formatDate, formatDays, nextBirthdayWithin } from "@/lib/leave-utils";
 import { toISODate } from "@/lib/calendar-utils";
 import { SubmitButton } from "@/components/submit-button";
 import { StatTile } from "@/components/stat-tile";
@@ -11,6 +11,7 @@ type PendingRequest = {
   start_date: string;
   end_date: string;
   days_requested: number;
+  half_day_period: "am" | "pm" | null;
   reason: string | null;
   profile: { full_name: string } | null;
   leave_type: { name: string } | null;
@@ -59,7 +60,7 @@ export default async function AdminHomePage({
     supabase
       .from("leave_requests")
       .select(
-        "id, start_date, end_date, days_requested, reason, profile:profiles!leave_requests_user_id_fkey(full_name), leave_type:leave_types(name)",
+        "id, start_date, end_date, days_requested, half_day_period, reason, profile:profiles!leave_requests_user_id_fkey(full_name), leave_type:leave_types(name)",
       )
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
@@ -182,8 +183,7 @@ export default async function AdminHomePage({
                   <p className="font-medium text-slate-900">{r.profile?.full_name}</p>
                   <p className="text-sm text-slate-600">
                     {r.leave_type?.name} · {formatDate(r.start_date)} -{" "}
-                    {formatDate(r.end_date)} · {r.days_requested} day
-                    {r.days_requested === 1 ? "" : "s"}
+                    {formatDate(r.end_date)} · {formatDays(r.days_requested, r.half_day_period)}
                   </p>
                   {r.reason && (
                     <p className="mt-1 text-sm text-slate-500">“{r.reason}”</p>

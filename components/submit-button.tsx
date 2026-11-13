@@ -5,6 +5,8 @@ import type { ButtonHTMLAttributes } from "react";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   pendingText?: string;
+  /** If set, asks the user to confirm before submitting. */
+  confirmMessage?: string;
 };
 
 /**
@@ -13,13 +15,28 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
  * ancestor's pending state) - works with formAction too, since useFormStatus
  * reflects whichever action the form is currently running.
  */
-export function SubmitButton({ children, pendingText, className, disabled, ...props }: Props) {
+export function SubmitButton({
+  children,
+  pendingText,
+  confirmMessage,
+  className,
+  disabled,
+  onClick,
+  ...props
+}: Props) {
   const { pending } = useFormStatus();
 
   return (
     <button
       {...props}
       type="submit"
+      onClick={(e) => {
+        if (confirmMessage && !window.confirm(confirmMessage)) {
+          e.preventDefault();
+          return;
+        }
+        onClick?.(e);
+      }}
       disabled={disabled || pending}
       className={`inline-flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-60 ${className ?? ""}`}
     >

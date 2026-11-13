@@ -1,3 +1,5 @@
+import type { HalfDayPeriod } from "@/lib/types";
+
 /**
  * Counts weekdays (Mon-Fri) between two ISO date strings, inclusive.
  * No holiday calendar for v1 - just business days.
@@ -30,7 +32,10 @@ export function countWeekdays(startDate: string, endDate: string): number {
 export function validateLeaveDateRange(
   startDate: string,
   endDate: string,
-): { ok: false; error: string } | { ok: true; daysRequested: number } {
+  duration: string = "full",
+):
+  | { ok: false; error: string }
+  | { ok: true; daysRequested: number; halfDayPeriod: HalfDayPeriod | null } {
   if (!startDate || !endDate) {
     return { ok: false, error: "Please choose a start and end date." };
   }
@@ -45,12 +50,35 @@ export function validateLeaveDateRange(
     return { ok: false, error: "End date must be on or after the start date." };
   }
 
-  const daysRequested = countWeekdays(startDate, endDate);
-  if (daysRequested <= 0) {
+  const weekdays = countWeekdays(startDate, endDate);
+  if (weekdays <= 0) {
     return { ok: false, error: "That date range doesn't include any weekdays (Mon-Fri)." };
   }
 
-  return { ok: true, daysRequested };
+  if (duration === "am" || duration === "pm") {
+    if (startDate !== endDate) {
+      return {
+        ok: false,
+        error: "A half day must be a single date - set the start and end date to the same day.",
+      };
+    }
+    return { ok: true, daysRequested: 0.5, halfDayPeriod: duration };
+  }
+
+  return { ok: true, daysRequested: weekdays, halfDayPeriod: null };
+}
+
+/** "Half day (AM)", "1 day", "2.5 days" - for showing a leave's length. */
+export function formatDays(days: number, period?: HalfDayPeriod | null): string {
+  const n = Number(days);
+  if (n === 0.5) return period ? `Half day (${period.toUpperCase()})` : "Half day";
+  return `${n} day${n === 1 ? "" : "s"}`;
+}
+
+/** Suffix for calendar labels: " (AM)", " (PM)", " (half day)", or "" for full days. */
+export function halfDaySuffix(days: number, period?: HalfDayPeriod | null): string {
+  if (period) return ` (${period.toUpperCase()})`;
+  return Number(days) === 0.5 ? " (half day)" : "";
 }
 
 export function formatDate(isoDate: string): string {
@@ -93,6 +121,7 @@ const LEAVE_TYPE_ABBR: Record<string, string> = {
   Vacation: "VL",
   Sick: "SL",
   Offset: "OL",
+  "Wellness Break": "WB",
 };
 
 export function leaveTypeAbbr(name: string): string {

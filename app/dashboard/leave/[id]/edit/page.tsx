@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { SubmitButton } from "@/components/submit-button";
 import { BackLink } from "@/components/back-link";
+import { LeaveDurationField } from "@/components/leave-duration-field";
 import { updateLeaveRequest } from "../../actions";
 
 export default async function EditLeaveRequestPage({
@@ -22,7 +23,7 @@ export default async function EditLeaveRequestPage({
   const [{ data: request }, { data: leaveTypes }, { data: balances }] = await Promise.all([
     supabase
       .from("leave_requests")
-      .select("id, user_id, leave_type_id, start_date, end_date, reason, status")
+      .select("id, user_id, leave_type_id, start_date, end_date, days_requested, half_day_period, reason, status")
       .eq("id", id)
       .single(),
     supabase.from("leave_types").select("id, name").eq("is_active", true).order("sort_order"),
@@ -108,6 +109,8 @@ export default async function EditLeaveRequestPage({
           </div>
         </div>
 
+        <LeaveDurationField defaultPeriod={request.half_day_period} />
+
         <div>
           <label htmlFor="reason" className="block text-sm font-medium text-slate-700">
             Reason (optional)
@@ -123,7 +126,7 @@ export default async function EditLeaveRequestPage({
 
         <p className="text-xs text-slate-400">
           Days requested are counted as weekdays (Mon-Fri) between the start and end dates,
-          inclusive. Only pending requests can be edited.
+          inclusive, or 0.5 for a half day. Only pending requests can be edited.
         </p>
 
         <SubmitButton

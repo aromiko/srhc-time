@@ -9,12 +9,14 @@ import {
 import { LeaveCalendar, type CalendarEvent } from "@/components/leave-calendar";
 import { ScheduleCalendar, type ScheduleEvent } from "@/components/schedule-calendar";
 import { displayName } from "@/lib/profile-utils";
-import { leaveTypeAbbr } from "@/lib/leave-utils";
+import { leaveTypeAbbr, halfDaySuffix } from "@/lib/leave-utils";
 import type { ShiftColor } from "@/lib/types";
 
 type LeaveRow = {
   id: string;
   start_date: string;
+  days_requested: number;
+  half_day_period: "am" | "pm" | null;
   end_date: string;
   profile: { full_name: string; nickname: string | null } | null;
   leave_type: { name: string; sort_order: number } | null;
@@ -86,7 +88,7 @@ export default async function PublicCalendarPage({
     admin
       .from("leave_requests")
       .select(
-        "id, start_date, end_date, " +
+        "id, start_date, end_date, days_requested, half_day_period, " +
           "profile:profiles!leave_requests_user_id_fkey(full_name, nickname), " +
           "leave_type:leave_types(name, sort_order)",
       )
@@ -124,7 +126,7 @@ export default async function PublicCalendarPage({
       end_date: r.end_date,
       status: "approved" as const,
       mine: false,
-      label: r.profile ? displayName(r.profile) : "—",
+      label: (r.profile ? displayName(r.profile) : "—") + halfDaySuffix(r.days_requested, r.half_day_period),
       groupLabel: leaveTypeAbbr(r.leave_type?.name ?? ""),
       sortOrder: r.leave_type?.sort_order ?? 998,
     })),

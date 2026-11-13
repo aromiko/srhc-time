@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/submit-button";
 import { BackLink } from "@/components/back-link";
 import { batchAddLeaveBalance } from "./actions";
+import { EmployeePicker } from "./employee-picker";
 
 export default async function BatchBalancePage({
   searchParams,
@@ -68,25 +69,7 @@ export default async function BatchBalancePage({
           </div>
         </div>
 
-        <div>
-          <p className="block text-sm font-medium text-slate-700">Employees</p>
-          <div className="mt-1 max-h-72 space-y-1 overflow-y-auto rounded-md border border-slate-300 p-2">
-            {(employees ?? []).map((e) => (
-              <label
-                key={e.id}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-800 hover:bg-slate-50"
-              >
-                <input
-                  type="checkbox"
-                  name="employee_ids"
-                  value={e.id}
-                  className="h-4 w-4 rounded border-slate-300 text-brand-700 focus:ring-brand-600"
-                />
-                {e.full_name}
-              </label>
-            ))}
-          </div>
-        </div>
+        <EmployeePicker employees={employees ?? []} />
 
         <SubmitButton
           pendingText="Adding…"

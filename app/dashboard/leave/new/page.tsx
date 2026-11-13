@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { SubmitButton } from "@/components/submit-button";
 import { BackLink } from "@/components/back-link";
+import { LeaveDurationField } from "@/components/leave-duration-field";
 import { submitLeaveRequest } from "./actions";
 
 export default async function NewLeaveRequestPage({
@@ -95,6 +96,8 @@ export default async function NewLeaveRequestPage({
           </div>
         </div>
 
+        <LeaveDurationField />
+
         <div>
           <label htmlFor="reason" className="block text-sm font-medium text-slate-700">
             Reason (optional)
@@ -109,7 +112,7 @@ export default async function NewLeaveRequestPage({
 
         <p className="text-xs text-slate-400">
           Days requested are counted as weekdays (Mon-Fri) between the start and
-          end dates, inclusive.
+          end dates, inclusive, or 0.5 for a half day.
         </p>
 
         <SubmitButton

@@ -54,18 +54,18 @@ export async function createEmployee(formData: FormData) {
       .eq("id", newUserId);
   }
 
-  // Seed a zero-balance row for every active leave type so the employee
-  // shows up ready to have balances assigned.
+  // Seed a balance row for every active leave type (at its initial_days,
+  // usually 0) so the employee shows up ready to have balances assigned.
   const { data: leaveTypes } = await supabase
     .from("leave_types")
-    .select("id")
+    .select("id, initial_days")
     .eq("is_active", true);
   if (leaveTypes && leaveTypes.length > 0) {
     await supabase.from("leave_balances").insert(
       leaveTypes.map((lt) => ({
         user_id: newUserId,
         leave_type_id: lt.id,
-        allocated_days: 0,
+        allocated_days: lt.initial_days ?? 0,
         used_days: 0,
       })),
     );
