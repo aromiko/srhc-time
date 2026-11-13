@@ -1,16 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatDate } from "@/lib/leave-utils";
+import { formatDate, formatDays } from "@/lib/leave-utils";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmitButton } from "@/components/submit-button";
 import { PendingLink } from "@/components/pending-link";
-import { updateRequestStatus } from "./actions";
-import type { LeaveStatus } from "@/lib/types";
+import { updateRequestStatus, deleteRequest } from "./actions";
+import type { HalfDayPeriod, LeaveStatus } from "@/lib/types";
 
 type RequestRow = {
   id: string;
   start_date: string;
   end_date: string;
   days_requested: number;
+  half_day_period: HalfDayPeriod | null;
   reason: string | null;
   status: LeaveStatus;
   admin_notes: string | null;
@@ -34,7 +35,7 @@ export default async function AdminRequestsPage({
   let query = supabase
     .from("leave_requests")
     .select(
-      "id, start_date, end_date, days_requested, reason, status, admin_notes, " +
+      "id, start_date, end_date, days_requested, half_day_period, reason, status, admin_notes, " +
         "profile:profiles!leave_requests_user_id_fkey(full_name), " +
         "leave_type:leave_types(name), " +
         "reviewer:profiles!leave_requests_reviewed_by_fkey(full_name)",
@@ -86,7 +87,7 @@ export default async function AdminRequestsPage({
                 <p className="font-medium text-slate-900">{r.profile?.full_name}</p>
                 <p className="text-sm text-slate-600">
                   {r.leave_type?.name} · {formatDate(r.start_date)} - {formatDate(r.end_date)} ·{" "}
-                  {r.days_requested} day{r.days_requested === 1 ? "" : "s"}
+                  {formatDays(r.days_requested, r.half_day_period)}
                 </p>
                 {r.reason && <p className="mt-1 text-sm text-slate-500">“{r.reason}”</p>}
                 {r.reviewer && (
@@ -129,6 +130,24 @@ export default async function AdminRequestsPage({
                 className="rounded-md bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
               >
                 Save
+              </SubmitButton>
+              <PendingLink
+                href={`/admin/requests/${r.id}/edit`}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Edit
+              </PendingLink>
+              <SubmitButton
+                formAction={deleteRequest}
+                pendingText="Deleting…"
+                confirmMessage={
+                  r.status === "approved"
+                    ? `Delete this leave permanently? ${formatDays(r.days_requested, r.half_day_period).toLowerCase()} will be returned to the employee's balance.`
+                    : "Delete this leave request permanently?"
+                }
+                className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
+              >
+                Delete
               </SubmitButton>
             </form>
           </div>

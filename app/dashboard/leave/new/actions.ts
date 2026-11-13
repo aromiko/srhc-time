@@ -24,7 +24,7 @@ export async function submitLeaveRequest(formData: FormData) {
     redirect(withError("/dashboard/leave/new", "Please choose a leave type."));
   }
 
-  const range = validateLeaveDateRange(startDate, endDate);
+  const range = validateLeaveDateRange(startDate, endDate, String(formData.get("duration") ?? "full"));
   if (!range.ok) {
     redirect(withError("/dashboard/leave/new", range.error));
   }
@@ -46,6 +46,7 @@ export async function submitLeaveRequest(formData: FormData) {
     start_date: startDate,
     end_date: endDate,
     days_requested: daysRequested,
+    half_day_period: range.halfDayPeriod,
     reason: reason || null,
     status: "pending",
   });

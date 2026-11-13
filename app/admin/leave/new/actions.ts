@@ -19,7 +19,7 @@ export async function fileLeaveOnBehalf(formData: FormData) {
   if (!userId) redirect(withError("/admin/leave/new", "Please pick an employee."));
   if (!leaveTypeId) redirect(withError("/admin/leave/new", "Please choose a leave type."));
 
-  const range = validateLeaveDateRange(startDate, endDate);
+  const range = validateLeaveDateRange(startDate, endDate, String(formData.get("duration") ?? "full"));
   if (!range.ok) {
     redirect(withError("/admin/leave/new", range.error));
   }
@@ -36,6 +36,7 @@ export async function fileLeaveOnBehalf(formData: FormData) {
       start_date: startDate,
       end_date: endDate,
       days_requested: daysRequested,
+      half_day_period: range.halfDayPeriod,
       status: "pending",
     })
     .select("id")

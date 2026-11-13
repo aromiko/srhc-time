@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ResponsiveTable, type Column } from "@/components/responsive-table";
-import type { Profile } from "@/lib/types";
+import type { LeaveBalance, LeaveType, Profile } from "@/lib/types";
 
-const columns: Column<Profile>[] = [
+type EmployeeRow = Profile & { remaining: Record<string, number> };
+
+const baseColumns: Column<EmployeeRow>[] = [
   { key: "name", header: "Name", cell: (e) => e.full_name },
   {
     key: "mobile",
@@ -18,29 +20,59 @@ const columns: Column<Profile>[] = [
       ),
   },
   { key: "role", header: "Role", cell: (e) => <span className="capitalize">{e.role}</span> },
-  {
-    key: "manage",
-    header: "",
-    align: "right",
-    cell: (e) => (
-      <Link
-        href={`/admin/employees/${e.id}`}
-        className="text-sm font-medium text-brand-700 hover:text-brand-800"
-      >
-        Manage
-      </Link>
-    ),
-  },
 ];
+
+const manageColumn: Column<EmployeeRow> = {
+  key: "manage",
+  header: "",
+  align: "right",
+  cell: (e) => (
+    <Link
+      href={`/admin/employees/${e.id}`}
+      className="text-sm font-medium text-brand-700 hover:text-brand-800"
+    >
+      Manage
+    </Link>
+  ),
+};
 
 export default async function EmployeesPage() {
   const supabase = await createClient();
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("full_name");
+  const [{ data: profiles }, { data: types }, { data: balances }] = await Promise.all([
+    supabase.from("profiles").select("*").order("full_name"),
+    supabase.from("leave_types").select("*").eq("is_active", true).order("sort_order"),
+    supabase.from("leave_balances").select("user_id, leave_type_id, allocated_days, used_days"),
+  ]);
 
-  const employees = (profiles ?? []) as Profile[];
+  const leaveTypes = (types ?? []) as LeaveType[];
+  const remainingByUser = new Map<string, Record<string, number>>();
+  for (const b of (balances ?? []) as Omit<LeaveBalance, "id">[]) {
+    const rec = remainingByUser.get(b.user_id) ?? {};
+    rec[b.leave_type_id] = b.allocated_days - b.used_days;
+    remainingByUser.set(b.user_id, rec);
+  }
+
+  const employees: EmployeeRow[] = ((profiles ?? []) as Profile[]).map((p) => ({
+    ...p,
+    remaining: remainingByUser.get(p.id) ?? {},
+  }));
+
+  const columns: Column<EmployeeRow>[] = [
+    ...baseColumns,
+    ...leaveTypes.map(
+      (t): Column<EmployeeRow> => ({
+        key: `bal-${t.id}`,
+        header: t.name,
+        align: "right",
+        cell: (e) => {
+          const n = e.remaining[t.id];
+          if (n === undefined) return <span className="text-slate-400">—</span>;
+          return <span className={n < 0 ? "text-red-600" : "tabular-nums"}>{n}</span>;
+        },
+      }),
+    ),
+    manageColumn,
+  ];
 
   return (
     <div>

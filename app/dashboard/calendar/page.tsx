@@ -10,13 +10,15 @@ import {
 import { LeaveCalendar, type CalendarEvent } from "@/components/leave-calendar";
 import { ScheduleCalendar, type ScheduleEvent } from "@/components/schedule-calendar";
 import { displayName } from "@/lib/profile-utils";
-import { leaveTypeAbbr } from "@/lib/leave-utils";
+import { leaveTypeAbbr, halfDaySuffix } from "@/lib/leave-utils";
 import type { ShiftColor } from "@/lib/types";
 
 type ApprovedRow = {
   id: string;
   user_id: string;
   start_date: string;
+  days_requested: number;
+  half_day_period: "am" | "pm" | null;
   end_date: string;
   profile: { full_name: string; nickname: string | null } | null;
   leave_type: { name: string; sort_order: number } | null;
@@ -25,6 +27,8 @@ type ApprovedRow = {
 type OwnPendingRow = {
   id: string;
   start_date: string;
+  days_requested: number;
+  half_day_period: "am" | "pm" | null;
   end_date: string;
   leave_type: { name: string; sort_order: number } | null;
 };
@@ -84,7 +88,7 @@ export default async function EmployeeCalendarPage({
     supabase
       .from("leave_requests")
       .select(
-        "id, user_id, start_date, end_date, " +
+        "id, user_id, start_date, end_date, days_requested, half_day_period, " +
           "profile:profiles!leave_requests_user_id_fkey(full_name, nickname), " +
           "leave_type:leave_types(name, sort_order)",
       )
@@ -93,7 +97,7 @@ export default async function EmployeeCalendarPage({
       .gte("end_date", startISO),
     supabase
       .from("leave_requests")
-      .select("id, start_date, end_date, leave_type:leave_types(name, sort_order)")
+      .select("id, start_date, end_date, days_requested, half_day_period, leave_type:leave_types(name, sort_order)")
       .eq("user_id", user.profile.id)
       .eq("status", "pending")
       .lte("start_date", endISO)
@@ -129,7 +133,8 @@ export default async function EmployeeCalendarPage({
       end_date: r.end_date,
       status: "approved" as const,
       mine: r.user_id === user.profile.id,
-      label: r.user_id === user.profile.id ? "You" : r.profile ? displayName(r.profile) : "—",
+      label:
+        (r.user_id === user.profile.id ? "You" : r.profile ? displayName(r.profile) : "—") + halfDaySuffix(r.days_requested, r.half_day_period),
       groupLabel: leaveTypeAbbr(r.leave_type?.name ?? ""),
       sortOrder: r.leave_type?.sort_order ?? 998,
     })),
@@ -139,7 +144,7 @@ export default async function EmployeeCalendarPage({
       end_date: r.end_date,
       status: "pending" as const,
       mine: true,
-      label: "You (pending)",
+      label: `You${halfDaySuffix(r.days_requested, r.half_day_period)} (pending)`,
       groupLabel: leaveTypeAbbr(r.leave_type?.name ?? ""),
       sortOrder: r.leave_type?.sort_order ?? 998,
     })),

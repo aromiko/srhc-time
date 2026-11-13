@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { StatusBadge } from "@/components/status-badge";
 import { ResponsiveTable, type Column } from "@/components/responsive-table";
 import { SubmitButton } from "@/components/submit-button";
-import { formatDate } from "@/lib/leave-utils";
+import { formatDate, formatDays } from "@/lib/leave-utils";
 import { cancelLeaveRequest } from "./leave/actions";
 
 type BalanceRow = {
@@ -20,6 +20,7 @@ type RequestRow = {
   start_date: string;
   end_date: string;
   days_requested: number;
+  half_day_period: "am" | "pm" | null;
   status: "pending" | "approved" | "declined";
   reason: string | null;
   admin_notes: string | null;
@@ -65,7 +66,7 @@ const requestColumns: Column<RequestRow>[] = [
     header: "Dates",
     cell: (r) => `${formatDate(r.start_date)} - ${formatDate(r.end_date)}`,
   },
-  { key: "days", header: "Days", align: "right", cell: (r) => r.days_requested },
+  { key: "days", header: "Days", align: "right", cell: (r) => formatDays(r.days_requested, r.half_day_period) },
   { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
   {
     key: "notes",
@@ -117,7 +118,7 @@ export default async function DashboardPage() {
     supabase
       .from("leave_requests")
       .select(
-        "id, start_date, end_date, days_requested, status, reason, admin_notes, leave_type:leave_types(name)",
+        "id, start_date, end_date, days_requested, half_day_period, status, reason, admin_notes, leave_type:leave_types(name)",
       )
       .eq("user_id", user.profile.id)
       .order("created_at", { ascending: false }),

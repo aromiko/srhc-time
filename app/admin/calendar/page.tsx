@@ -15,13 +15,15 @@ import { updateSchedule, deleteSchedule } from "@/app/admin/schedule/actions";
 import { updateCalendarEvent, deleteCalendarEvent } from "@/app/admin/event/actions";
 import { updateAbsence, deleteAbsence } from "@/app/admin/absence/actions";
 import { displayName } from "@/lib/profile-utils";
-import { formatDate, leaveTypeAbbr } from "@/lib/leave-utils";
+import { formatDate, leaveTypeAbbr, halfDaySuffix } from "@/lib/leave-utils";
 import type { ShiftColor } from "@/lib/types";
 
 type LeaveRow = {
   id: string;
   user_id: string;
   start_date: string;
+  days_requested: number;
+  half_day_period: "am" | "pm" | null;
   end_date: string;
   status: "pending" | "approved";
   profile: { full_name: string; nickname: string | null } | null;
@@ -96,7 +98,7 @@ export default async function AdminCalendarPage({
     supabase
       .from("leave_requests")
       .select(
-        "id, user_id, start_date, end_date, status, " +
+        "id, user_id, start_date, end_date, days_requested, half_day_period, status, " +
           "profile:profiles!leave_requests_user_id_fkey(full_name, nickname), " +
           "leave_type:leave_types(name, sort_order)",
       )
@@ -148,7 +150,7 @@ export default async function AdminCalendarPage({
       end_date: r.end_date,
       status: r.status,
       mine: r.user_id === user?.profile.id,
-      label: `${r.profile ? displayName(r.profile) : "—"}${r.status === "pending" ? " (pending)" : ""}`,
+      label: `${r.profile ? displayName(r.profile) : "—"}${halfDaySuffix(r.days_requested, r.half_day_period)}${r.status === "pending" ? " (pending)" : ""}`,
       groupLabel: leaveTypeAbbr(r.leave_type?.name ?? ""),
       sortOrder: r.leave_type?.sort_order ?? 998,
     })),

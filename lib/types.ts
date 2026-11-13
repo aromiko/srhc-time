@@ -1,5 +1,6 @@
 export type Role = "admin" | "employee";
 export type LeaveStatus = "pending" | "approved" | "declined";
+export type HalfDayPeriod = "am" | "pm";
 
 export type Profile = {
   id: string;
@@ -17,6 +18,7 @@ export type LeaveType = {
   name: string;
   sort_order: number;
   is_active: boolean;
+  initial_days: number;
 };
 
 export type LeaveBalance = {
@@ -39,6 +41,7 @@ export type LeaveRequest = {
   reviewed_by: string | null;
   reviewed_at: string | null;
   admin_notes: string | null;
+  half_day_period: HalfDayPeriod | null;
   created_at: string;
 };
 
