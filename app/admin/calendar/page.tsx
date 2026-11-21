@@ -288,9 +288,9 @@ export default async function AdminCalendarPage({
       </section>
 
       <section id="schedule">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold text-slate-900">Schedule</h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link
               href="/admin/schedule/new"
               className="rounded-md bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
@@ -302,6 +302,12 @@ export default async function AdminCalendarPage({
               className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
             >
               + Add Event
+            </Link>
+            <Link
+              href="/admin/schedule/remove"
+              className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Remove Schedules
             </Link>
           </div>
         </div>
